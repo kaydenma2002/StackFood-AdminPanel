@@ -637,6 +637,7 @@ class BusinessSettingsController extends Controller
                 'value' => json_encode(['commission' =>  1, 'subscription' => 1 ])
             ]);
         }
+
         Toastr::success( translate('Successfully updated. To see the changes in app restart the app.'));
         return back();
     }

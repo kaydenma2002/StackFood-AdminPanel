@@ -510,7 +510,7 @@ class DeliveryManController extends Controller
                     ->orWhere('phone', 'like', "%{$value}%")
                     ->orWhere('identity_number', 'like', "%{$value}%");
             }
-        })->active()->limit(8)->get(['id',DB::raw('CONCAT(f_name, " ", l_name) as text')]);
+        })->active()->limit(10)->get(['id',DB::raw('CONCAT(f_name, " ", l_name) as text')]);
         return response()->json($data);
     }
 

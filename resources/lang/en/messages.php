@@ -5741,4 +5741,9 @@
   'The upload excel must not be greater than 2048 kilobytes.' => 'The upload excel must not be greater than 2048 kilobytes.',
   'latitude_must_be_in_-90_to_90_on_Id' => 'Latitude must be in -90 to 90 on Id',
   'Please fill all required fields: phone' => 'Please fill all required fields: phone',
+  'license_code_is_required' => 'License code is required',
+  'doamain_is_required' => 'Doamain is required',
+  'Invalid_license_code_or_unregistered_domain' => 'Invalid license code or unregistered domain',
+  'react_data_updated' => 'React data updated',
+  'please_select_category' => 'Please select category',
 );

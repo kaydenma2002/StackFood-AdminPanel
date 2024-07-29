@@ -404,7 +404,7 @@ class POSController extends Controller
             }
         })
         ->where('status', 1)
-            ->limit(8)
+            ->limit(10)
             ->get([DB::raw('id, CONCAT(f_name, " ", l_name, " (", phone ,")") as text')]);
 
         return response()->json($data);

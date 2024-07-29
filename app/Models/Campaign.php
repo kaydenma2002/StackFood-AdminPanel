@@ -80,7 +80,7 @@ class Campaign extends Model
     public function restaurants()
     {
 
-        return $this->belongsToMany(Restaurant::class)->withPivot('campaign_status');
+        return $this->belongsToMany(Restaurant::class, 'campaign_restaurant', 'campaign_id', 'restaurant_id');
     }
 
     public function scopeActive($query)

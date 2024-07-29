@@ -115,13 +115,13 @@ class Restaurant extends Model
 
     public function tags()
     {
-        return $this->belongsToMany(Tag::class,'restaurant_tag','restaurant_id','id');
+        return $this->belongsToMany(Tag::class,'restaurant_tag','restaurant_id','tag_id');
     }
 
 
     public function characteristics()
     {
-        return $this->belongsToMany(Characteristic::class);
+        return $this->belongsToMany(Characteristic::class,'characteristic_restaurant','restaurant_id','characteristic_id');
     }
 
     public function restaurant_config()
@@ -186,7 +186,7 @@ class Restaurant extends Model
 
     public function schedules()
     {
-        return $this->hasMany(RestaurantSchedule::class)->orderBy('opening_time');
+        return $this->hasMany(RestaurantSchedule::class,'restaurant_id','restaurant_id')->orderBy('opening_time');
     }
 
     public function deliverymen()
@@ -196,7 +196,7 @@ class Restaurant extends Model
 
     public function orders()
     {
-        return $this->hasMany(Order::class);
+        return $this->hasMany(Order::class,'restaurant_id','restaurant_id');
     }
 
     public function wishlists()
@@ -206,7 +206,7 @@ class Restaurant extends Model
 
     public function discount()
     {
-        return $this->hasOne(Discount::class);
+        return $this->hasOne(Discount::class,'restaurant_id','restaurant_id');
     }
 
     public function zone()
@@ -216,7 +216,7 @@ class Restaurant extends Model
 
     public function campaigns()
     {
-        return $this->belongsToMany(Campaign::class);
+        return $this->belongsToMany(Campaign::class,'campaign_restaurant','restaurant_id','campaign_id');
     }
 
     public function itemCampaigns()

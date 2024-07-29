@@ -333,7 +333,7 @@ class POSController extends Controller
                 ->orWhere('phone', 'like', "%{$value}%");
             }
         })
-        ->limit(8)
+        ->limit(10)
         ->get([DB::raw('id, CONCAT(f_name, " ", l_name, " (", phone ,")") as text')]);
 
         $data[]=(object)['id'=>false, 'text'=>translate('messages.walk_in_customer')];

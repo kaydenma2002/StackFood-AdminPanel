@@ -144,7 +144,7 @@ class CustomerController extends Controller
                 ->orWhere('phone', 'like', "%{$value}%");
             }
         })
-        ->limit(8)
+        ->limit(10)
         ->get([DB::raw('id, CONCAT(f_name, " ", l_name, " (", phone ,")") as text')]);
         if($request->all) $data[]=(object)['id'=>false, 'text'=>translate('messages.all')];
         return response()->json($data);

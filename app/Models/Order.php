@@ -37,7 +37,7 @@ class Order extends Model
         'is_guest'=>'boolean',
         'additional_charge' => 'float',
         'ref_bonus_amount' => 'float',
-        'extra_packaging_amount' => 'float', 
+        'extra_packaging_amount' => 'float',
     ];
     protected $appends = ['order_proof_full_url'];
 
@@ -133,7 +133,7 @@ class Order extends Model
 
     public function restaurant()
     {
-        return $this->belongsTo(Restaurant::class, 'restaurant_id');
+        return $this->belongsTo(Restaurant::class, 'restaurant_id','restaurant_id');
     }
 
     public function delivery_history()

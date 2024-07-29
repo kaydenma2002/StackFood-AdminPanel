@@ -225,7 +225,7 @@ class CategoryController extends Controller
     }
 
     public function get_all(Request $request){
-        $data = Category::where('name', 'like', '%'.$request->q.'%')->limit(8)->get()
+        $data = Category::where('name', 'like', '%'.$request->q.'%')->limit(10)->get()
 
         ->map(function ($category) {
             $data =$category->position == 0 ? translate('messages.main'): translate('messages.sub');

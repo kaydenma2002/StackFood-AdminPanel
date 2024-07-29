@@ -101,16 +101,16 @@ class CampaignController extends Controller
                 $q->whereIn('zone_id', $zone_id)->Weekday()->where('status',1);
             })
                 ->select(['item_campaigns.*'])
-                // ->leftJoin('restaurants', 'item_campaigns.restaurant_id', '=', 'restaurants.id')
+                // ->leftJoin('restaurants', 'item_campaigns.restaurant_id', '=', 'restaurants.restaurant_id')
                 ->selectSub(function ($subQuery) {
                     $subQuery->selectRaw('active as temp_available')
                         ->from('restaurants')
-                        ->whereColumn('restaurants.id', 'item_campaigns.restaurant_id');
+                        ->whereColumn('restaurants.restaurant_id', 'item_campaigns.restaurant_id');
                 }, 'temp_available')
                 ->selectSub(function ($subQuery) {
-                    $subQuery->selectRaw('IF(((select count(*) from `restaurant_schedule` where `restaurants`.`id` = `restaurant_schedule`.`restaurant_id` and `restaurant_schedule`.`day` = ? and `restaurant_schedule`.`opening_time` < ? and `restaurant_schedule`.`closing_time` > ?) > 0), true, false) as open', [now()->dayOfWeek, now()->format('H:i:s'), now()->format('H:i:s')])
+                    $subQuery->selectRaw('IF(((select count(*) from `restaurant_schedule` where `restaurants`.`restaurant_id` = `restaurant_schedule`.`restaurant_id` and `restaurant_schedule`.`day` = ? and `restaurant_schedule`.`opening_time` < ? and `restaurant_schedule`.`closing_time` > ?) > 0), true, false) as open', [now()->dayOfWeek, now()->format('H:i:s'), now()->format('H:i:s')])
                         ->from('restaurants')
-                        ->whereColumn('restaurants.id', 'item_campaigns.restaurant_id');
+                        ->whereColumn('restaurants.restaurant_id', 'item_campaigns.restaurant_id');
                 }, 'open');
             if($campaign_food_default_status == '1'){
                 $query = $query->running();
@@ -132,7 +132,7 @@ class CampaignController extends Controller
                     $query = $query->selectSub(function ($subQuery) use ($longitude, $latitude) {
                         $subQuery->selectRaw('ST_Distance_Sphere(point(longitude, latitude), point(?, ?)) as distance', [$longitude, $latitude])
                             ->from('restaurants')
-                            ->whereColumn('restaurants.id', 'item_campaigns.restaurant_id');
+                            ->whereColumn('restaurants.restaurant_id', 'item_campaigns.restaurant_id');
                     }, 'distance')
                         ->orderBy('distance');
                 } elseif ($campaign_food_sort_by_general == 'order_count') {

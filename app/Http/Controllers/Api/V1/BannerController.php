@@ -19,18 +19,28 @@ class BannerController extends Controller
                 'errors' => $errors
             ], 403);
         }
-        $longitude= $request->header('longitude');
-        $latitude= $request->header('latitude');
-        $zone_id= json_decode($request->header('zoneId'), true);
+        $longitude = $request->header('longitude');
+        $latitude = $request->header('latitude');
+        $zone_id = json_decode($request->header('zoneId'), true);
         $banners = BannerLogic::get_banners($zone_id);
-        $campaigns = Campaign::whereHas('restaurants', function($query)use($zone_id){
-            $query->whereIn('zone_id', $zone_id)->where('status',1)->where('campaign_status' ,'confirmed');
-        })->with('restaurants',function($query)use($zone_id,$longitude,$latitude){
-            return $query->WithOpen($longitude,$latitude)->whereIn('zone_id', $zone_id)->where('campaign_status' ,'confirmed')->where('status',1);
+        $campaigns = Campaign::whereHas('restaurants', function ($query) use ($zone_id) {
+            $query->whereIn('zone_id', $zone_id)
+                ->where('restaurants.status', 1) // Disambiguate the 'status' column
+                ->where('campaign_restaurant.campaign_status', 'confirmed'); // Specify the table for 'campaign_status'
         })
-        ->running()->active()->get();
+            ->with('restaurants', function ($query) use ($zone_id, $longitude, $latitude) {
+                return $query->WithOpen($longitude, $latitude)
+                    ->whereIn('zone_id', $zone_id)
+                    ->where('campaign_restaurant.campaign_status', 'confirmed') // Specify the table for 'campaign_status'
+                    ->where('restaurants.status', 1); // Disambiguate the 'status' column
+            })
+            ->running()
+            ->active()
+            ->get();
+
+
         try {
-            return response()->json(['campaigns'=>Helpers::basic_campaign_data_formatting($campaigns, true),'banners'=>$banners], 200);
+            return response()->json(['campaigns' => Helpers::basic_campaign_data_formatting($campaigns, true), 'banners' => $banners], 200);
         } catch (\Exception $e) {
             info($e->getMessage());
             return response()->json([], 200);

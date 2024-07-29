@@ -182,15 +182,11 @@
                                             data-toggle="tooltip" data-placement="right"
                                             data-original-title="{{ translate('messages.Required.')}}"> *
                                             </span></label>
-                                        <select name="category_id" id="category_id"
-                                            class="form-control js-select2-custom get-request"
-                                            oninvalid="this.setCustomValidity('Select Category')">
-                                            <option value="" selected disabled>
-                                                {{ translate('Select_Category') }}</option>
-                                            @foreach ($categories as $category)
-                                                <option value="{{ $category['id'] }}">{{ $category['name'] }}
-                                                </option>
-                                            @endforeach
+                                            <select name="category_id" id="category_id"
+                                            data-placeholder="{{ translate('messages.select_category') }}"
+                                            class="js-data-example-ajax-category form-control"
+                                            oninvalid="this.setCustomValidity('{{ translate('messages.please_select_category') }}')">
+
                                         </select>
                                     </div>
                                 </div>
@@ -679,6 +675,21 @@
             let id = 'sub-categories';
             getRequest(route, id);
         });
+        function getCategoryData(route, category, id) {
+            $.get({
+                url: route + category,
+                dataType: 'json',
+                success: function(data) {
+                    $('#' + id).empty().append(data.options);
+                },
+            });
+        }
+
+        $('.get-request').on('change', function () {
+            let route = '{{ url('/') }}/admin/food/get-categories?parent_id='+$(this).val();
+            let id = 'sub-categories';
+            getRequest(route, id);
+        });
 
         function getRequest(route, id) {
             $.get({
@@ -700,6 +711,54 @@
         $('.js-data-example-ajax').select2({
             ajax: {
                 url: '{{ url('/') }}/admin/restaurant/get-restaurants',
+                data: function(params) {
+                    return {
+                        q: params.term, // search term
+                        page: params.page
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                },
+                __port: function(params, success, failure) {
+                    let $request = $.ajax(params);
+
+                    $request.then(success);
+                    $request.fail(failure);
+
+                    return $request;
+                }
+            }
+        });
+        $('.js-data-example-ajax').select2({
+            ajax: {
+                url: '{{ url('/') }}/admin/restaurant/get-restaurants',
+                data: function(params) {
+                    return {
+                        q: params.term, // search term
+                        page: params.page
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                },
+                __port: function(params, success, failure) {
+                    let $request = $.ajax(params);
+
+                    $request.then(success);
+                    $request.fail(failure);
+
+                    return $request;
+                }
+            }
+        });
+        $('.js-data-example-ajax-category').select2({
+            ajax: {
+                url: '{{ url('/') }}/admin/category/get-categories',
                 data: function(params) {
                     return {
                         q: params.term, // search term

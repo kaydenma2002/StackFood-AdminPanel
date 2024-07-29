@@ -16,6 +16,7 @@ use App\Models\Cuisine;
 use App\Models\Message;
 use App\Models\UserInfo;
 use App\Models\Restaurant;
+use App\Models\Category;
 use App\Models\Translation;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
@@ -782,13 +783,34 @@ class VendorController extends Controller
             })
 
             ->where('restaurants.name', 'like', '%' . $request->q . '%')
-            ->limit(8)->get()
+            ->limit(10)->get()
             ->map(function ($restaurant) {
                 return [
                     'id' => $restaurant->restaurant_id,
                     'text' => $restaurant->name . ' (' . $restaurant->zone?->name . ')',
                 ];
             });
+
+        if (isset($request->all)) {
+            $data[] = (object)['id' => 'all', 'text' => 'All'];
+        }
+
+        return response()->json($data);
+    }
+    public function get_categories(Request $request)
+    {
+
+        $zone_ids = isset($request->zone_ids) ? (count($request->zone_ids) > 0 ? $request->zone_ids : []) : 0;
+        $zone_id = $request->zone_id ??  null;
+        $data = Category::where('name', 'like', '%' . $request->q . '%')
+        ->limit(10)
+        ->get()
+        ->map(function ($category) {
+            return [
+                'id' => $category->id,
+                'text' => $category->name,
+            ];
+        });
 
         if (isset($request->all)) {
             $data[] = (object)['id' => 'all', 'text' => 'All'];

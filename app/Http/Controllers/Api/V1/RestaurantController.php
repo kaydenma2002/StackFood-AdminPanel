@@ -84,6 +84,7 @@ class RestaurantController extends Controller
         }
         $longitude= $request->header('longitude');
         $latitude= $request->header('latitude');
+
         $type = $request->query('type', 'all');
         $zone_id= json_decode($request->header('zoneId'), true);
         $restaurants = RestaurantLogic::get_popular_restaurants(zone_id:$zone_id,limit: $request['limit'], offset:$request['offset'],type: $type,longitude:$longitude,latitude:$latitude,veg:$request->veg ,non_veg:$request->non_veg, discount:$request->discount,top_rated: $request->top_rated);
@@ -294,7 +295,7 @@ class RestaurantController extends Controller
         ->Active()
         ->whereIn('zone_id', $zone_id)
 
-        ->selectRaw('(SELECT `visit_count` FROM `visitor_logs` WHERE `restaurants`.`id` = `visitor_logs`.`visitor_log_id` AND `user_id` = ? ORDER BY `visit_count` DESC LIMIT 1) as visit_count', [$user_id])
+        ->selectRaw('(SELECT `visit_count` FROM `visitor_logs` WHERE `restaurants`.`restaurant_id` = `visitor_logs`.`visitor_log_id` AND `user_id` = ? ORDER BY `visit_count` DESC LIMIT 1) as visit_count', [$user_id])
 
         ->orderBy('visit_count', 'desc')
 

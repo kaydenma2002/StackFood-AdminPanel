@@ -111,7 +111,7 @@ class CuisineController extends Controller
                     $query->selectRaw('AVG(reviews.rating)')
                         ->from('reviews')
                         ->join('food', 'food.id', '=', 'reviews.food_id')
-                        ->whereColumn('food.restaurant_id', 'restaurants.id')
+                        ->whereColumn('food.restaurant_id', 'restaurants.restaurant_id')
                         ->groupBy('food.restaurant_id');
                 }, 'avg_r')->orderBy('avg_r', 'desc');
             }elseif($all_restaurant_sort_by_general == 'review_count') {

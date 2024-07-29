@@ -58,16 +58,16 @@ class CategoryLogic
         })
         ->type($additional_data['type'])
         ->select(['food.*'])
-        // ->leftJoin('restaurants', 'food.restaurant_id', '=', 'restaurants.id')
+        // ->leftJoin('restaurants', 'food.restaurant_id', '=', 'restaurants.restaurant_id')
         ->selectSub(function ($subQuery) {
             $subQuery->selectRaw('active as temp_available')
                 ->from('restaurants')
-                ->whereColumn('restaurants.id', 'food.restaurant_id');
+                ->whereColumn('restaurants.restaurant_id', 'food.restaurant_id');
         }, 'temp_available')
         ->selectSub(function ($subQuery) {
-            $subQuery->selectRaw('IF(((select count(*) from `restaurant_schedule` where `restaurants`.`id` = `restaurant_schedule`.`restaurant_id` and `restaurant_schedule`.`day` = ? and `restaurant_schedule`.`opening_time` < ? and `restaurant_schedule`.`closing_time` > ?) > 0), true, false) as open', [now()->dayOfWeek, now()->format('H:i:s'), now()->format('H:i:s')])
+            $subQuery->selectRaw('IF(((select count(*) from `restaurant_schedule` where `restaurants`.`restaurant_id` = `restaurant_schedule`.`restaurant_id` and `restaurant_schedule`.`day` = ? and `restaurant_schedule`.`opening_time` < ? and `restaurant_schedule`.`closing_time` > ?) > 0), true, false) as open', [now()->dayOfWeek, now()->format('H:i:s'), now()->format('H:i:s')])
                 ->from('restaurants')
-                ->whereColumn('restaurants.id', 'food.restaurant_id');
+                ->whereColumn('restaurants.restaurant_id', 'food.restaurant_id');
         }, 'open');
 
         if ($category_food_default_status == '1'){
@@ -91,7 +91,7 @@ class CategoryLogic
                 $query = $query->selectSub(function ($subQuery) use ($additional_data) {
                     $subQuery->selectRaw('ST_Distance_Sphere(point(longitude, latitude), point(?, ?)) as distance', [$additional_data['longitude'], $additional_data['latitude']])
                         ->from('restaurants')
-                        ->whereColumn('restaurants.id', 'food.restaurant_id');
+                        ->whereColumn('restaurants.restaurant_id', 'food.restaurant_id');
                 }, 'distance')
                     ->orderBy('distance');
             } elseif ($category_food_sort_by_general == 'rating') {
@@ -158,7 +158,7 @@ class CategoryLogic
                 $query->selectRaw('AVG(reviews.rating)')
                     ->from('reviews')
                     ->join('food', 'food.id', '=', 'reviews.food_id')
-                    ->whereColumn('food.restaurant_id', 'restaurants.id')
+                    ->whereColumn('food.restaurant_id', 'restaurants.restaurant_id')
                     ->groupBy('food.restaurant_id')
                     ->havingRaw('AVG(reviews.rating) >= ?', [$additional_data['avg_rating']]);
             }, 'avg_r')->having('avg_r', '>=', $additional_data['avg_rating']);
@@ -169,7 +169,7 @@ class CategoryLogic
                         $query->selectRaw('AVG(reviews.rating)')
                             ->from('reviews')
                             ->join('food', 'food.id', '=', 'reviews.food_id')
-                            ->whereColumn('food.restaurant_id', 'restaurants.id')
+                            ->whereColumn('food.restaurant_id', 'restaurants.restaurant_id')
                             ->groupBy('food.restaurant_id')
                             ->havingRaw('AVG(reviews.rating) > ?', [4]);
                     }, 'avg_r')->having('avg_r', '>=', 4);
@@ -202,7 +202,7 @@ class CategoryLogic
                     $query->selectRaw('AVG(reviews.rating)')
                         ->from('reviews')
                         ->join('food', 'food.id', '=', 'reviews.food_id')
-                        ->whereColumn('food.restaurant_id', 'restaurants.id')
+                        ->whereColumn('food.restaurant_id', 'restaurants.restaurant_id')
                         ->groupBy('food.restaurant_id');
                 }, 'avg_r')->orderBy('avg_r', 'desc');
             }elseif($all_restaurant_sort_by_general == 'review_count') {

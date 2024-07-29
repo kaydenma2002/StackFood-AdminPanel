@@ -74,12 +74,12 @@ class ProductController extends Controller
             ->selectSub(function ($subQuery) {
                 $subQuery->selectRaw('active as temp_available')
                     ->from('restaurants')
-                    ->whereColumn('restaurants.id', 'food.restaurant_id');
+                    ->whereColumn('restaurants.restaurant_id', 'food.restaurant_id');
             }, 'temp_available')
             ->selectSub(function ($subQuery) {
-                $subQuery->selectRaw('IF(((select count(*) from `restaurant_schedule` where `restaurants`.`id` = `restaurant_schedule`.`restaurant_id` and `restaurant_schedule`.`day` = ? and `restaurant_schedule`.`opening_time` < ? and `restaurant_schedule`.`closing_time` > ?) > 0), true, false) as open', [now()->dayOfWeek, now()->format('H:i:s'), now()->format('H:i:s')])
+                $subQuery->selectRaw('IF(((select count(*) from `restaurant_schedule` where `restaurants`.`restaurant_id` = `restaurant_schedule`.`restaurant_id` and `restaurant_schedule`.`day` = ? and `restaurant_schedule`.`opening_time` < ? and `restaurant_schedule`.`closing_time` > ?) > 0), true, false) as open', [now()->dayOfWeek, now()->format('H:i:s'), now()->format('H:i:s')])
                     ->from('restaurants')
-                    ->whereColumn('restaurants.id', 'food.restaurant_id');
+                    ->whereColumn('restaurants.restaurant_id', 'food.restaurant_id');
             }, 'open')
             ->when($request->category_id, function($query)use($request){
                 $query->whereHas('category',function($q)use($request){
@@ -444,7 +444,7 @@ class ProductController extends Controller
         })
         ->orderByRaw("FIELD(name, ?) DESC", [$request->name])
         ->limit(50)
-        ->get(['id','name','image']);
+        ->get(['restaurant_id','name','image']);
 
         $restaurants = Restaurant::withOpen($longitude,$latitude)->whereIn('zone_id', $zone_id)->weekday()
         ->where(function ($q) use ($key) {
@@ -462,7 +462,7 @@ class ProductController extends Controller
         ->active()
         ->limit(50)
         ->orderByRaw("FIELD(name, ?) DESC", [$request->name])
-        ->select(['id','name','logo'])
+        ->select(['restaurant_id','name','logo'])
         ->get();
 
         return [

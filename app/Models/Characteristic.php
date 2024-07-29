@@ -12,6 +12,6 @@ class Characteristic extends Model
 
     public function restaurants()
     {
-        return $this->belongsToMany(Restaurant::class)->using('App\Models\CharacteristicRestaurant');
+        return $this->belongsToMany(Restaurant::class, 'characteristic_restaurant', 'characteristic_id', 'restaurant_id');
     }
 }

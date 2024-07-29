@@ -515,6 +515,7 @@ class FoodController extends Controller
         ->paginate(config('default_pagination'));
         $restaurant =$restaurant_id !='all'? Restaurant::findOrFail($restaurant_id):null;
         $category =$category_id !='all'? Category::with('translations')->findOrFail($category_id):null;
+
         return view('admin-views.product.list', compact('foods','restaurant','category', 'type'));
     }
 
