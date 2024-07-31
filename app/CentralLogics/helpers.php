@@ -51,6 +51,8 @@ use Illuminate\Support\Facades\Storage;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 use Laravelpkg\Laravelchk\Http\Controllers\LaravelchkController;
 use App\Traits\PaymentGatewayTrait;
+use Illuminate\Support\Facades\Cache;
+
 class Helpers
 {
     use PaymentGatewayTrait;
@@ -1871,9 +1873,9 @@ class Helpers
     public static function get_restaurant_id()
     {
         if (auth('vendor_employee')->check()) {
-            return auth('vendor_employee')->user()->restaurant->id;
+            return auth('vendor_employee')->user()->restaurants->restaurant_id;
         }
-        return auth('vendor')->user()->restaurants[0]->id;
+        return auth('vendor')->user()->restaurants[0]->restaurant_id;
     }
 
     public static function get_vendor_id()
@@ -1909,7 +1911,7 @@ class Helpers
     public static function get_restaurant_data()
     {
         if (auth('vendor_employee')->check()) {
-            return auth('vendor_employee')->user()->restaurant;
+            return auth('vendor_employee')->user()->restaurants;
         }
         return auth('vendor')->user()->restaurants[0];
     }
@@ -2076,11 +2078,11 @@ class Helpers
             $permission = auth('vendor_employee')->user()->role->modules;
             if (isset($permission) && in_array($mod_name, (array)json_decode($permission)) == true) {
                 if ($mod_name == 'reviews') {
-                    return auth('vendor_employee')->user()->restaurant->reviews_section;
+                    return auth('vendor_employee')->user()->restaurants->reviews_section;
                 } else if ($mod_name == 'deliveryman') {
-                    return auth('vendor_employee')->user()->restaurant->self_delivery_system;
+                    return auth('vendor_employee')->user()->restaurants->self_delivery_system;
                 } else if ($mod_name == 'pos') {
-                    return auth('vendor_employee')->user()->restaurant->pos_system;
+                    return auth('vendor_employee')->user()->restaurants->pos_system;
                 }
                 return true;
             }
@@ -2628,30 +2630,27 @@ class Helpers
 
     public Static function subscription_check()
     {
-        $business_model= BusinessSetting::where('key', 'business_model')->first();
-        if(!$business_model)
-            {
-                Helpers::insert_business_settings_key('refund_active_status', '1');
-                Helpers::insert_business_settings_key('business_model',
-                json_encode([
-                    'commission'        =>  1,
-                    'subscription'     =>  0,
+        return Cache::remember('subscription_check', 60*60, function () {
+            $business_model = BusinessSetting::where('key', 'business_model')->first();
+            if (!$business_model) {
+                self::insert_business_settings_key('refund_active_status', '1');
+                self::insert_business_settings_key('business_model', json_encode([
+                    'commission' => 1,
+                    'subscription' => 0,
                 ]));
                 $business_model = [
-                    'commission'        =>  1,
-                    'subscription'     =>  0,
+                    'commission' => 1,
+                    'subscription' => 0,
                 ];
-            } else{
+            } else {
                 $business_model = $business_model->value ? json_decode($business_model->value, true) : [
-                    'commission'        =>  1,
-                    'subscription'     =>  0,
+                    'commission' => 1,
+                    'subscription' => 0,
                 ];
             }
 
-        if ($business_model['subscription'] == 1 ){
-            return true;
-        }
-        return false;
+            return $business_model['subscription'] == 1;
+        });
     }
 
     public Static function commission_check()
@@ -3267,7 +3266,7 @@ class Helpers
             if (auth('vendor_employee')->check()) {
                 $loable_type = 'App\Models\VendorEmployee';
                 $logable_id = auth('vendor_employee')->id();
-                $restaurant_id=auth('vendor_employee')->user() != null && isset(auth('vendor_employee')->user()->restaurant) ? auth('vendor_employee')->user()->restaurant->id : null;
+                $restaurant_id=auth('vendor_employee')->user() != null && isset(auth('vendor_employee')->user()->restaurants) ? auth('vendor_employee')->user()->restaurants->id : null;
             } elseif (auth('vendor')->check() || request('vendor')) {
                 $restaurant_id=auth('vendor')->user() != null && isset(auth('vendor')->user()->restaurants[0]) ? auth('vendor')->user()->restaurants[0]->id : null;
                 $loable_type = 'App\Models\Vendor';

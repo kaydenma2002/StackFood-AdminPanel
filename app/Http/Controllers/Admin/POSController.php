@@ -28,14 +28,19 @@ class POSController extends Controller
 {
     public function index(Request $request)
     {
+
         $time = Carbon::now()->toTimeString();
+
         $zone_id = $request->query('zone_id', null);
         $restaurant_id = $request->query('restaurant_id', null);
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $restaurant_data = Restaurant::active()->with('restaurant_sub')->where('zone_id', $zone_id)->find($restaurant_id);
+
         $category = $request->query('category_id', 0);
+
         // dd($category);
-        $categories = Category::active()->get(['id','name']);
+        $categories = Category::limit(10)->get(['id', 'name']);
+
         $keyword = $request->query('keyword', false);
         $key = explode(' ', $keyword);
 

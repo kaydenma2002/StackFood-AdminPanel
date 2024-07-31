@@ -489,12 +489,13 @@ class FoodController extends Controller
 
     public function list(Request $request)
     {
+
         $key = explode(' ', $request['search']);
         $restaurant_id = $request->query('restaurant_id', 'all');
         $category_id = $request->query('category_id', 'all');
         $type = $request->query('type', 'all');
         $foods = Food::withoutGlobalScope(RestaurantScope::class)
-        ->with(['restaurant','category.parent'])
+        ->with(['restaurant','category.parent', 'orders', 'storage'])
         ->when(is_numeric($restaurant_id), function($query)use($restaurant_id){
             return $query->where('restaurant_id', $restaurant_id);
         })

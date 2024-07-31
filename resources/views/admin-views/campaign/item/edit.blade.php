@@ -170,7 +170,7 @@
                                                         class="input-label-secondary"></span></label>
                                                 <select name="restaurant_id" class="js-data-example-ajax form-control get-restaurant" data-url="{{url('/')}}/admin/restaurant/get-addons?data[]=0&restaurant_id=" data-id="add_on" title="Select Restaurant" required>
                                                     @if($campaign->restaurant)
-                                                    <option value="{{$campaign->restaurant->id}}" selected>{{$campaign->restaurant->name}}</option>
+                                                    <option value="{{$campaign->restaurant->restaurant_id}}" selected>{{$campaign->restaurant->name}}</option>
                                                     @else
                                                     <option selected>{{translate('messages.select_restaurant')}}</option>
                                                     @endif

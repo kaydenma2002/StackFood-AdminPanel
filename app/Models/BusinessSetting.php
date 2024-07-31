@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use App\CentralLogics\Helpers;
@@ -10,7 +9,11 @@ use Illuminate\Support\Facades\DB;
 class BusinessSetting extends Model
 {
     use HasFactory;
+
     protected $guarded = ['id'];
+
+    // Automatically eager-load the storage relation
+    public $with = ['storage'];
 
     public function storage()
     {
@@ -19,14 +22,13 @@ class BusinessSetting extends Model
 
     protected static function booted(): void
     {
-        // static::addGlobalScope('storage', function ($builder) {
-        //     $builder->with('storage');
-        // });
-
+        // No need to add a global scope for storage if it's already in $with
     }
+
     protected static function boot()
     {
         parent::boot();
+
         static::saved(function ($model) {
             $value = Helpers::getDisk();
 

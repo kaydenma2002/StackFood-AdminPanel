@@ -87,7 +87,7 @@ class Vendor extends Authenticatable
 
     public function restaurants()
     {
-        return $this->hasMany(Restaurant::class);
+        return $this->hasMany(Restaurant::class,'vendor_id','id');
     }
     public function withdrawrequests()
     {

@@ -53,7 +53,7 @@
                                                     id="restaurant_id" disabled>
 
                                                 <option value="">{{ translate('Select_a_restaurant') }}</option>
-                                                @foreach (Restaurant::active()->orderBy('name')->where('zone_id',request('zone_id'))->get(['id','name']) as $restaurant)
+                                                @foreach (Restaurant::active()->orderBy('name')->where('zone_id',request('zone_id'))->get(['restaurant_id','name']) as $restaurant)
                                                     <option
                                                         value="{{ $restaurant['restaurant_id'] }}" {{ request('restaurant_id') && request('restaurant_id')==$restaurant->restaurant_id? 'selected':''}}>
                                                         {{ $restaurant->name }}

@@ -37,7 +37,7 @@ class DeliveryManController extends Controller
         ->withCount(['orders'=>function($query){
             $query->where('order_status','delivered');
         }])
-        ->where('restaurant_id', $request?->vendor?->restaurants[0]->id)->latest()->get()->map(function($data){
+        ->where('restaurant_id', $request?->vendor?->restaurant[0]->restaurant_id)->latest()->get()->map(function($data){
             $data->identity_image = json_decode($data->identity_image);
             $data->orders_count = (double)$data->orders_count;
             $data['avg_rating'] = (double)($data?->rating[0]?->average ?? 0);
@@ -84,7 +84,7 @@ class DeliveryManController extends Controller
         ->withCount(['orders'=>function($query){
             $query->where('order_status','delivered');
         }])
-        ->where('restaurant_id', $request?->vendor?->restaurants[0]->id)->where(['id' => $request->delivery_man_id])->first();
+        ->where('restaurant_id', $request?->vendor?->restaurant[0]->restaurant_id)->where(['id' => $request->delivery_man_id])->first();
         $dm['avg_rating'] = (double)($dm?->rating[0]?->average ?? 0);
         $dm['rating_count'] = (double)($dm?->rating[0]?->rating_count ?? 0);
         $dm['cash_in_hands'] =$dm?->wallet?->collected_cash ?? 0;
@@ -142,7 +142,7 @@ class DeliveryManController extends Controller
         $dm->phone = $request->phone;
         $dm->identity_number = $request->identity_number;
         $dm->identity_type = $request->identity_type;
-        $dm->restaurant_id =  $request?->vendor?->restaurants[0]->id;
+        $dm->restaurant_id =  $request?->vendor?->restaurant[0]->restaurant_id;
         $dm->identity_image = $identity_image;
         $dm->image = $image_name;
         $dm->active = 0;

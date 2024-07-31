@@ -15,6 +15,8 @@ use App\Models\OrderTransaction;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\SubscriptionTransaction;
+use App\Models\BusinessSetting;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
@@ -31,7 +33,8 @@ class DashboardController extends Controller
         $total_sell = $data['total_sell'];
         $total_subs = $data['total_subs'];
         $commission = $data['commission'];
-        return view('admin-views.dashboard', compact('data', 'total_sell','total_subs' ,'commission', 'params'));
+        $business_name = $data['business_name'];
+        return view('admin-views.dashboard', compact('data', 'total_sell', 'total_subs', 'commission', 'params','business_name'));
     }
 
     public function order(Request $request)
@@ -87,7 +90,7 @@ class DashboardController extends Controller
             'stat_zone' => view('admin-views.partials._zone-change', compact('data'))->render(),
             'order_stats_top' => view('admin-views.partials._order-statics', compact('data'))->render(),
             'user_overview' => view('admin-views.partials._user-overview-chart', compact('data'))->render(),
-            'monthly_graph' => view('admin-views.partials._monthly-earning-graph', compact('total_sell','total_subs', 'commission'))->render(),
+            'monthly_graph' => view('admin-views.partials._monthly-earning-graph', compact('total_sell', 'total_subs', 'commission'))->render(),
         ], 200);
     }
 
@@ -133,8 +136,7 @@ class DashboardController extends Controller
             $refunded = Order::Refunded();
         }
 
-        if(is_numeric($zone_id))
-        {
+        if (is_numeric($zone_id)) {
             $searching_for_dm = $searching_for_dm->Notpos()->OrderScheduledIn(30)->hasSubscriptionToday()->where('zone_id', $zone_id)->count();
             $accepted_by_dm = $accepted_by_dm->hasSubscriptionToday()->Notpos()->where('zone_id', $zone_id)->count();
             $preparing_in_rs = $preparing_in_rs->Notpos()->where('zone_id', $zone_id)->count();
@@ -143,9 +145,7 @@ class DashboardController extends Controller
             $canceled = $canceled->Notpos()->where('zone_id', $zone_id)->count();
             $refund_requested = $refund_requested->Notpos()->where('zone_id', $zone_id)->count();
             $refunded = $refunded->Notpos()->where('zone_id', $zone_id)->count();
-        }
-        else
-        {
+        } else {
             $searching_for_dm = $searching_for_dm->Notpos()->hasSubscriptionToday()->OrderScheduledIn(30)->count();
             $accepted_by_dm = $accepted_by_dm->Notpos()->count();
             $preparing_in_rs = $preparing_in_rs->Notpos()->count();
@@ -170,28 +170,23 @@ class DashboardController extends Controller
 
 
         return $data;
-
-
     }
 
     public function user_overview_calc($zone_id)
     {
         $params = session('dash_params');
-        if(is_numeric($zone_id))
-        {
+        if (is_numeric($zone_id)) {
             $customer = User::where('zone_id', $zone_id);
-            $restaurants = Restaurant::where(['zone_id' => $zone_id])->wherehas('vendor', function($query) {
-                return  $query->where('status' , 1);
+            $restaurants = Restaurant::where(['zone_id' => $zone_id])->wherehas('vendor', function ($query) {
+                return  $query->where('status', 1);
             });
-            $delivery_man = DeliveryMan::where('zone_id', $zone_id)->where('application_status' ,'approved')->Zonewise();
-        }
-        else
-        {
+            $delivery_man = DeliveryMan::where('zone_id', $zone_id)->where('application_status', 'approved')->Zonewise();
+        } else {
             $customer = User::whereNotNull('id');
-            $restaurants = Restaurant::whereNotNull('restaurant_id')->wherehas('vendor', function($query) {
-                return  $query->where('status' , 1);
+            $restaurants = Restaurant::whereNotNull('restaurant_id')->wherehas('vendor', function ($query) {
+                return  $query->where('status', 1);
             });
-            $delivery_man = DeliveryMan::Zonewise()->where('application_status' ,'approved' );
+            $delivery_man = DeliveryMan::Zonewise()->where('application_status', 'approved');
         }
         //user overview
         if ($params['user_overview'] == 'overall') {
@@ -221,18 +216,21 @@ class DashboardController extends Controller
         $params = session('dash_params');
         $data_os = self::order_stats_calc($params['zone_id']);
         $data_uo = self::user_overview_calc($params['zone_id']);
-
+        $business_name = Cache::remember('business_name', 60*60, function() {
+            return BusinessSetting::where('key', 'business_name')->first()->value ?? 'Dashboard';
+        });
         $popular = Wishlist::with(['restaurant'])
-        ->whereHas('restaurant')
-        ->when(is_numeric($params['zone_id']), function($q)use($params){
-            return $q->whereHas('restaurant', function($query)use($params){
-                return $query->where('zone_id', $params['zone_id']);
-            });
-        })
-        ->select('restaurant_id', DB::raw('COUNT(restaurant_id) as count'))->groupBy('restaurant_id')->orderBy('count', 'DESC')->limit(12)->get();
+            ->whereHas('restaurant')
+            ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->whereHas('restaurant', function ($query) use ($params) {
+                    return $query->where('zone_id', $params['zone_id']);
+                });
+            })
+            ->select('restaurant_id', DB::raw('COUNT(restaurant_id) as count'))->groupBy('restaurant_id')->orderBy('count', 'DESC')->limit(12)->get();
+
         $top_sell = Food::withoutGlobalScopes([ZoneScope::class])
-            ->when(is_numeric($params['zone_id']),function($q)use($params){
-                return $q->whereHas('restaurant', function($query)use($params){
+            ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->whereHas('restaurant', function ($query) use ($params) {
                     return $query->where('zone_id', $params['zone_id']);
                 });
             })
@@ -240,28 +238,26 @@ class DashboardController extends Controller
             ->take(6)
             ->get();
         $top_rated_foods = Food::withoutGlobalScopes([ZoneScope::class])
-            ->when(is_numeric($params['zone_id']),function($q)use($params){
-                return $q->whereHas('restaurant', function($query)use($params){
+            ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->whereHas(['restaurant', 'orders'], function ($query) use ($params) {
                     return $query->where('zone_id', $params['zone_id']);
                 });
             })
             ->where('avg_rating', '>', 0)
-            ->orderBy('avg_rating','desc')
-            ->orderBy('rating_count','desc')
+            ->orderBy('avg_rating', 'desc')
+            ->orderBy('rating_count', 'desc')
             ->limit(6)
             ->get();
 
-        $top_deliveryman = DeliveryMan::
-            when(is_numeric($params['zone_id']), function($q)use($params){
+        $top_deliveryman = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
                 return $q->where('zone_id', $params['zone_id']);
             })
-            ->where('type','zone_wise')
+            ->where('type', 'zone_wise')
             ->orderBy("order_count", 'desc')
             ->take(6)
             ->get();
 
-        $top_restaurants = Restaurant::
-            when(is_numeric($params['zone_id']), function($q)use($params){
+        $top_restaurants = Restaurant::when(is_numeric($params['zone_id']), function ($q) use ($params) {
                 return $q->where('zone_id', $params['zone_id']);
             })
             ->orderBy("order_count", 'desc')
@@ -270,17 +266,17 @@ class DashboardController extends Controller
 
         $total_sell = [];
         $commission = [];
-        $total_subs= [];
+        $total_subs = [];
         for ($i = 1; $i <= 12; $i++) {
             $total_sell[$i] = OrderTransaction::NotRefunded()
-                ->when(is_numeric($params['zone_id']), function($q)use($params){
+                ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
                     return $q->where('zone_id', $params['zone_id']);
                 })
                 ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
                 ->sum('order_amount');
 
 
-                $total_subs[$i] = SubscriptionTransaction::
+            $total_subs[$i] = SubscriptionTransaction::
                 // ->when(is_numeric($params['zone_id']), function($q)use($params){
                 //     return $q->where('zone_id', $params['zone_id']);
                 // })
@@ -290,7 +286,7 @@ class DashboardController extends Controller
 
 
             $commission[$i] = OrderTransaction::NotRefunded()
-                ->when(is_numeric($params['zone_id']), function($q)use($params){
+                ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
                     return $q->where('zone_id', $params['zone_id']);
                 })
                 ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
@@ -298,7 +294,7 @@ class DashboardController extends Controller
                 ->sum(DB::raw('admin_commission + admin_expense - delivery_fee_comission'));
 
             $commission[$i] += OrderTransaction::NotRefunded()
-                ->when(is_numeric($params['zone_id']), function($q)use($params){
+                ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
                     return $q->where('zone_id', $params['zone_id']);
                 })
                 ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
@@ -314,7 +310,7 @@ class DashboardController extends Controller
         $dash_data['total_sell'] = $total_sell;
         $dash_data['total_subs'] = $total_subs;
         $dash_data['commission'] = $commission;
-
+        $dash_data['business_name'] = $business_name;
         return $dash_data;
     }
 }

@@ -18,6 +18,7 @@ class DataSetting extends Model
         // 'status' => 'integer',
     ];
 
+
     public function translations()
     {
         return $this->morphMany(Translation::class, 'translationable');
@@ -41,9 +42,9 @@ class DataSetting extends Model
 
     protected static function booted()
     {
-        // static::addGlobalScope('storage', function ($builder) {
-        //     $builder->with('storage');
-        // });
+        static::addGlobalScope('storage', function ($builder) {
+            $builder->with('storage');
+        });
         static::addGlobalScope('translate', function (Builder $builder) {
             $builder->with(['translations' => function ($query) {
                 return $query->where('locale', app()->getLocale());

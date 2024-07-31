@@ -561,7 +561,7 @@ class RestaurantLogic
         $storage = [];
         foreach ($restaurants as $item) {
             $storage[] = [
-                'id' => $item->restaurants[0]->id ?? null,
+                'id' => $item->restaurant[0]->restaurant_id ?? null,
                 'ownerID' => $item->id ?? null,
                 'ownerFirstName' => $item->f_name ?? null,
                 'ownerLastName' => $item->l_name ?? null,

@@ -5746,4 +5746,8 @@
   'Invalid_license_code_or_unregistered_domain' => 'Invalid license code or unregistered domain',
   'react_data_updated' => 'React data updated',
   'please_select_category' => 'Please select category',
+  'Food recommendation updated!' => 'Food recommendation updated!',
+  'All Type' => 'All Type',
+  'flash_sale_discount' => 'Flash sale discount',
+  'CashBack' => 'CashBack',
 );

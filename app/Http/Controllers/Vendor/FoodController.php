@@ -488,6 +488,7 @@ class FoodController extends Controller
         })
         ->type($type)->latest()->paginate(config('default_pagination'));
         $category =$category_id !='all'? Category::findOrFail($category_id):null;
+
         return view('vendor-views.product.list', compact('foods', 'category', 'type'));
     }
 

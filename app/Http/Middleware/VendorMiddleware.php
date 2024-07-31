@@ -30,7 +30,7 @@ class VendorMiddleware
             return $next($request);
         }
         else if (Auth::guard('vendor_employee')->check()) {
-            if(!auth('vendor_employee')->user()->restaurant->status)
+            if(!auth('vendor_employee')->user()->restaurants->status)
             {
                 auth()->guard('vendor_employee')->logout();
                 $user_link = Helpers::get_login_url('restaurant_employee_login_url');

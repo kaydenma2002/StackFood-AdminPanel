@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Traits\ReportFilter;
 class OrderDetail extends Model
 {
+    public $with = ['order','food'];
     use HasFactory,ReportFilter;
 
     protected $casts = [

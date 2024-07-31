@@ -116,7 +116,7 @@ class FoodController extends Controller
         $food->discount_type = $request->discount_type;
         $food->attributes = $request->has('attribute_id') ? $request->attribute_id : json_encode([]);
         $food->add_ons = $request->has('addon_ids') ? json_encode(explode(',',$request->addon_ids)) : json_encode([]);
-        $food->restaurant_id = $request['vendor']->restaurants[0]->id;
+        $food->restaurant_id = $request['vendor']->restaurant[0]->restaurant_id;
         $food->veg = $request->veg;
         $food->maximum_cart_quantity = $request->maximum_cart_quantity;
         $food->is_halal =  $request->is_halal ?? 0;

@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Storage extends Model
 {
-    use HasFactory;
 
+    use HasFactory;
+    public $with= ['data'];
     public $timestamps = false;
 
     protected $fillable = [

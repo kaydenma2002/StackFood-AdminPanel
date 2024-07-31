@@ -466,9 +466,9 @@ class Restaurant extends Model
 
     protected static function booted()
     {
-        // static::addGlobalScope('storage', function ($builder) {
-        //     $builder->with('storage');
-        // });
+        static::addGlobalScope('storage', function ($builder) {
+            $builder->with('storage');
+        });
         static::addGlobalScope(new ZoneScope);
         static::addGlobalScope('translate', function (Builder $builder) {
             $builder->with(['translations' => function ($query) {
