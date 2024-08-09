@@ -1,4 +1,5 @@
 @extends('layouts.admin.app')
+@php use Illuminate\Support\Arr;@endphp
 
 @section('title', translate('Update_restaurant_info'))
 @push('css_or_js')
@@ -20,9 +21,18 @@
         $delivery_time_start =   explode('-',$restaurant->delivery_time)[0] ??  10 ;
         $delivery_time_end =  explode('-',$restaurant->delivery_time)[1] ??  30 ;
         $delivery_time_type =  explode('-',$restaurant->delivery_time)[2] ?? 'min';
+
     @endphp
-        @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-        @php($language = $language->value ?? null)
+
+        @php
+
+        $language=\App\Models\BusinessSetting::where('key','language')->first();
+
+
+        $language = json_decode($language->value, true);
+        $language = Arr::flatten($language);
+        @endphp
+
         @php($default_lang = str_replace('_', '-', app()->getLocale()))
 
         <form action="{{ route('admin.restaurant.update', [$restaurant['restaurant_id']]) }}" method="post"
@@ -39,7 +49,8 @@
                                     href="#"
                                     id="default-link">{{ translate('Default') }}</a>
                                 </li>
-                                @foreach (json_decode($language) as $lang)
+
+                                @foreach ($language as $lang)
                                     <li class="nav-item">
                                         <a class="nav-link lang_link"
                                             href="#"
@@ -47,6 +58,7 @@
                                     </li>
                                 @endforeach
                             </ul>
+
                             @endif
                             <div class="lang_form" id="default-form">
                                 <div class="form-group ">
@@ -63,7 +75,8 @@
 
 
                                 @if ($language)
-                                @foreach(json_decode($language) as $lang)
+
+                                @foreach($language as $lang)
 
                                 <?php
                                 if(count($restaurant['translations'])){
@@ -100,6 +113,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="col-lg-6">
                     <div class="card shadow--card-2">
                         <div class="card-header">
@@ -143,6 +157,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="col-lg-12">
                     <div class="card shadow--card-2">
                         <div class="card-header">
@@ -159,6 +174,7 @@
                                         placeholder="{{ translate('messages.Ex:_100') }} " min="0" step=".01" required
                                         value="{{ $restaurant->tax }}">
                                 </div>
+
                                 <div class="col-md-6">
                                     <div class="position-relative">
                                         <label class="input-label" for="tax">{{translate('Estimated_Delivery_Time_(_Min_&_Maximum_Time_)')}}</label>
@@ -201,6 +217,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="col-lg-12">
                     <div class="card shadow--card-2">
                         <div class="card-body">
@@ -211,8 +228,11 @@
                                         <select name="cuisine_ids[]" id="cuisine" class="form-control h--45px min--45 js-select2-custom"
                                         multiple="multiple"  data-placeholder="{{ translate('messages.select_Cuisine') }}" >
                                     </option>
+
                                     @php($cuisine_array = \App\Models\Cuisine::where('status',1 )->get()->toArray())
+
                                     @php($selected_cuisine =isset($restaurant->cuisine) ? $restaurant->cuisine->pluck('id')->toArray() : [])
+
                                     @foreach ($cuisine_array as $cu)
                                         <option value="{{ $cu['id'] }}"
                                             {{ in_array($cu['id'], $selected_cuisine) ? 'selected' : '' }}>
@@ -220,6 +240,7 @@
                                             @endforeach
                                         </select>
                                     </div>
+
                                     <div class="form-group">
                                         <label class="input-label" for="choice_zones">{{ translate('messages.zone') }}
                                                 <span data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.select_zone_for_map') }}"
@@ -254,7 +275,7 @@
                                                     src="{{ dynamicAsset('/public/assets/admin/img/info-circle.svg') }}"
                                                     alt="{{ translate('messages.restaurant_lat_lng_warning') }}"></span></label>
                                         <input type="text" id="latitude" name="latitude" class="form-control h--45px disabled"
-                                            placeholder="{{ translate('messages.Ex:_-94.22213') }}"  value="{{ $restaurant->latitude }}"required readonly>
+                                            placeholder="{{ translate('messages.Ex:_-94.22213') }}"  value="{{ $restaurant->latitude }}" readonly>
                                     </div>
                                     <div class="form-group mb-md-0">
                                         <label class="input-label" for="longitude">{{ translate('messages.longitude') }}
@@ -264,7 +285,7 @@
                                                     alt="{{ translate('messages.restaurant_lat_lng_warning') }}"></span>
                                                 </label>
                                         <input type="text" name="longitude" class="form-control h--45px disabled" placeholder="{{ translate('messages.Ex:_103.344322') }} "
-                                            id="longitude" value="{{ $restaurant->longitude }}"  required readonly>
+                                            id="longitude" value="{{ $restaurant->longitude }}"   readonly>
                                     </div>
                                 </div>
                                 <div class="col-md-8">
@@ -275,6 +296,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="col-lg-12">
                     <div class="card shadow--card-2">
                         <div class="card-header">
@@ -388,7 +410,7 @@
                                                                                         "defaultClass": "tio-hidden-outlined",
                                                                                         "showClass": "tio-visible-outlined",
                                                                                         "classChangeTarget": ".js-toggle-passowrd-show-icon-2"
-                                                                                        }'>
+                                                                                       }'>
                                             <div class="js-toggle-password-target-2 input-group-append">
                                                 <a class="input-group-text" href="javascript:;">
                                                     <i class="js-toggle-passowrd-show-icon-2 tio-visible-outlined"></i>

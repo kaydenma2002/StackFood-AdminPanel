@@ -8,7 +8,7 @@
             {{ $transcation->created_at->format('d M Y h:i A') }}
         </td>
         <td>
-            <a href="{{ route('admin.restaurant.view', $transcation->restaurant->restaurant_id) }}" alt="view restaurant"
+            <a href="{{ route('admin.restaurant.view', $transcation->restaurant->id) }}" alt="view restaurant"
                 class="table-rest-info">
                 <h5 class="text-hover-primary text-dark">
                     {{ Str::limit($transcation->restaurant->name, 20, '...') }}

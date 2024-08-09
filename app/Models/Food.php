@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use App\CentralLogics\Helpers;
@@ -10,12 +11,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\ReportFilter;
+use Laravel\Scout\Searchable;
 
 class Food extends Model
 {
-    use HasFactory, ReportFilter;
+    use HasFactory, ReportFilter, Searchable;
 
-    public $with = ['orders', 'storage'];
+    // Removed the redundant $with property to avoid unnecessary eager loading
+    // public $with = ['orders', 'storage'];
 
     protected $casts = [
         'tax' => 'float',
@@ -41,6 +44,7 @@ class Food extends Model
 
     protected $appends = ['image_full_url'];
 
+    // Accessor for full image URL
     public function getImageFullUrlAttribute()
     {
         $value = $this->image;
@@ -53,6 +57,8 @@ class Food extends Model
         }
         return Helpers::get_full_url('product', $value, 'public');
     }
+
+    // Relationships
 
     public function logs()
     {
@@ -74,11 +80,6 @@ class Food extends Model
         return $this->hasMany(VariationOption::class, 'food_id');
     }
 
-    public function scopeRecommended($query)
-    {
-        return $query->where('recommended', 1);
-    }
-
     public function carts()
     {
         return $this->morphMany(Cart::class, 'item');
@@ -87,25 +88,6 @@ class Food extends Model
     public function translations()
     {
         return $this->morphMany(Translation::class, 'translationable');
-    }
-
-    public function scopeActive($query)
-    {
-        return $query->where('status', 1)->whereHas('restaurant', function ($query) {
-            return $query->where('status', 1);
-        });
-    }
-
-    public function scopeAvailable($query, $time)
-    {
-        $query->where(function ($q) use ($time) {
-            $q->where('available_time_starts', '<=', $time)->where('available_time_ends', '>=', $time);
-        });
-    }
-
-    public function scopePopular($query)
-    {
-        return $query->orderBy('order_count', 'desc');
     }
 
     public function reviews()
@@ -140,23 +122,36 @@ class Food extends Model
         return $this->morphMany(Storage::class, 'data');
     }
 
-    protected static function booted()
+    public function tags()
     {
-        if (auth('vendor')->check() || auth('vendor_employee')->check()) {
-            static::addGlobalScope(new RestaurantScope);
-        }
+        return $this->belongsToMany(Tag::class);
+    }
 
-        static::addGlobalScope(new ZoneScope);
+    // Scopes
 
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
+    public function scopeRecommended($query)
+    {
+        return $query->where('recommended', 1);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 1)->whereHas('restaurant', function ($query) {
+            return $query->where('status', 1);
         });
+    }
 
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
+    public function scopeAvailable($query, $time)
+    {
+        return $query->where(function ($q) use ($time) {
+            $q->where('available_time_starts', '<=', $time)
+                ->where('available_time_ends', '>=', $time);
         });
+    }
+
+    public function scopePopular($query)
+    {
+        return $query->orderBy('order_count', 'desc');
     }
 
     public function scopeType($query, $type)
@@ -169,9 +164,27 @@ class Food extends Model
         return $query;
     }
 
-    public function tags()
+    // Boot method to handle model events
+
+    protected static function booted()
     {
-        return $this->belongsToMany(Tag::class);
+        // Apply global scopes based on user authentication
+        if (auth('vendor')->check() || auth('vendor_employee')->check()) {
+            static::addGlobalScope(new RestaurantScope);
+        }
+
+        static::addGlobalScope(new ZoneScope);
+
+        // Load storage and translations with conditions
+        static::addGlobalScope('storage', function ($builder) {
+            $builder->with('storage');
+        });
+
+        static::addGlobalScope('translate', function (Builder $builder) {
+            $builder->with(['translations' => function ($query) {
+                return $query->where('locale', app()->getLocale());
+            }]);
+        });
     }
 
     protected static function boot()
@@ -185,10 +198,13 @@ class Food extends Model
 
         static::retrieved(function ($food) {
             try {
-                // Eager load the orders relationship
-                $food->load('orders');
+                // Cache the orders relationship
+                $orders = cache()->remember("food_orders_{$food->id}", 60 * 60, function () use ($food) {
+                    return $food->orders()->get();
+                });
 
-                if ($food?->orders?->isNotEmpty() && $food->orders->where('created_at', '>=', now()->startOfDay())->isEmpty() && $food->stock_type == 'daily') {
+                // Check if orders exist and are from today, and if stock type is daily
+                if ($orders->isNotEmpty() && $orders->where('created_at', '>=', now()->startOfDay())->isEmpty() && $food->stock_type == 'daily') {
                     $food->sell_count = 0;
                     $food->save();
                     $food->newVariationOptions()->update(['sell_count' => 0]);
@@ -211,9 +227,14 @@ class Food extends Model
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+
+                // Clear the cache after saving
+                cache()->forget("food_orders_{$model->id}");
             }
         });
     }
+
+
 
     private function generateSlug($name)
     {
@@ -231,6 +252,7 @@ class Food extends Model
         return $slug;
     }
 
+    // Accessor for name with translation fallback
     public function getNameAttribute($value)
     {
         if ($this->translations->isNotEmpty()) {
@@ -243,6 +265,7 @@ class Food extends Model
         return $value;
     }
 
+    // Accessor for description with translation fallback
     public function getDescriptionAttribute($value)
     {
         if ($this->translations->isNotEmpty()) {
@@ -255,15 +278,17 @@ class Food extends Model
         return $value;
     }
 
+    // Accessor to calculate available stock
     public function getItemStockAttribute($value)
     {
         return $value - $this->sell_count > 0 ? $value - $this->sell_count : 0;
     }
 
+    // Accessor for variations with JSON handling
     public function getVariationsAttribute($value)
     {
         try {
-            if (is_string($value) &&  (json_decode($value, true) == null || count(json_decode($value, true)) == 0) && $this->newVariations->isNotEmpty() && $this->newVariationOptions->isNotEmpty()) {
+            if (is_string($value) && json_decode($value, true) == null && $this->newVariations->isNotEmpty() && $this->newVariationOptions->isNotEmpty()) {
                 $result = [];
                 foreach ($this->newVariations as $variation) {
                     $variationArray = [
@@ -272,13 +297,13 @@ class Food extends Model
                         "type" => $variation['type'],
                         "min" => (string) $variation['min'],
                         "max" => (string) $variation['max'],
-                        "required" => (string) $variation['is_required'] == true ? "on" : 'off',
+                        "required" => $variation['is_required'] ? "on" : 'off',
                         "values" => []
                     ];
 
                     foreach ($this->newVariationOptions as $option) {
                         if ($option['variation_id'] == $variation['id']) {
-                            $current_stock =  $option['stock_type'] == 'unlimited'  ? 'unlimited' : $option['total_stock'] - $option['sell_count'];
+                            $current_stock = $option['stock_type'] == 'unlimited' ? 'unlimited' : $option['total_stock'] - $option['sell_count'];
                             $variationArray['values'][] = [
                                 "label" => $option['option_name'],
                                 "optionPrice" => $option['option_price'],
@@ -286,15 +311,12 @@ class Food extends Model
                                 "stock_type" => $option['stock_type'],
                                 "sell_count" => (string) $option['sell_count'],
                                 "option_id" => (int) $option['id'],
-                                "current_stock" => (int) ($current_stock == 'unlimited' ? 0 : ($current_stock > 0 ? $current_stock : 0)),
+                                "current_stock" => (int) ($current_stock == 'unlimited' ? 0 : max($current_stock, 0)),
                             ];
                         }
                     }
                     $result[] = $variationArray;
                 }
-
-                unset($this->newVariations);
-                unset($this->newVariationOptions);
 
                 return json_encode($result);
             } else {
@@ -305,4 +327,16 @@ class Food extends Model
             return $value;
         }
     }
+    public function toSearchableArray()
+{
+    return [
+        'id' => $this->id,
+        'name' => $this->name,
+        'description' => $this->description,
+        'active' => $this->active,
+        'restaurant_name' => $this->restaurant->name ?? null,  // Safe access
+        'zone_id' => $this->restaurant->zone_id ?? null,       // Safe access
+        'weekday' => $this->restaurant->weekday ?? null,
+    ];
+}
 }

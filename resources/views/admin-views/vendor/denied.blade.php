@@ -114,7 +114,7 @@
                     <!-- Card Header -->
 
                     <!-- Table -->
-                    <div class="table-responsive datatable-custom resturant-list-table">
+                    <div class="table-responsive datatable-custom restaurant-list-table">
                         <table id="columnSearchDatatable"
                                class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
                                data-hs-datatables-options='{

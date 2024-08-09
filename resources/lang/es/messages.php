@@ -1637,7 +1637,7 @@
   'Bulk Export' => 'Exportación masiva',
   'business_management' => 'Administración de Empresas',
   'restaurant_config' => 'Configuración de restaurantes',
-  'My Resturant' => 'Mi restaurante',
+  'My Restaurant' => 'Mi restaurante',
   'my_shop' => 'Mi tienda',
   'my_bank_info' => 'Mi información bancaria',
   'my_wallet' => 'Mi billetera',

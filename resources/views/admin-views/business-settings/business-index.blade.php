@@ -900,7 +900,7 @@
                                                 <i class="tio-info-outined"></i>
                                                 </span>
                                         </label>
-                                        <div class="resturant-type-group border">
+                                        <div class="restaurant-type-group border">
                                             <label class="form-check form--check mr-2 mr-md-4">
                                                 <input class="form-check-input" type="radio" value="firebase" name="order_notification_type" {{ $order_notification_type ? ($order_notification_type->value == 'firebase' ? 'checked' : '') : '' }}>
                                                 <span class="form-check-label">
@@ -1047,7 +1047,7 @@
                                         </span>
                                         </span>
                                     </label>
-                                        <div class="resturant-type-group border">
+                                        <div class="restaurant-type-group border">
                                             <label class="form-check form--check mr-2 mr-md-4">
                                                 <input class="form-check-input" type="radio" value="cod" name="partial_payment_method" {{ $partial_payment_method ? ($partial_payment_method->value == 'cod' ? 'checked' : '') : '' }}>
                                                 <span class="form-check-label">

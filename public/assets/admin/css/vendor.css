@@ -392,7 +392,7 @@
     padding-top: 0;
 }
 
-.my-resturant--card {
+.my-restaurant--card {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -406,12 +406,12 @@
     border-radius: 8px;
 }
 
-.my-resturant--card .my-resturant--avatar {
+.my-restaurant--card .my-restaurant--avatar {
     width: 156px;
     aspect-ratio: 1;
 }
 
-.my-resturant--card .my-resturant--avatar img {
+.my-restaurant--card .my-restaurant--avatar img {
     width: 100%;
     aspect-ratio: 1;
     -o-object-fit: cover;
@@ -419,50 +419,50 @@
     border-radius: 50%;
 }
 
-.my-resturant--card .my-resturant--content {
+.my-restaurant--card .my-restaurant--content {
     max-width: 323px;
     width: calc(100% - 156px);
     margin: 0 auto;
     padding: 0 20px;
 }
 
-.my-resturant--card .my-resturant--content span strong,
-.my-resturant--card .my-resturant--content span a {
+.my-restaurant--card .my-restaurant--content span strong,
+.my-restaurant--card .my-restaurant--content span a {
     color: var(--title-clr);
 }
 
 @media screen and (max-width: 767px) {
-    .my-resturant--card {
+    .my-restaurant--card {
         margin-inline-start: 20px;
         margin-inline-end: 20px;
     }
 }
 @media screen and (max-width: 575px) {
-    .my-resturant--card {
+    .my-restaurant--card {
         padding: 25px;
     }
-    .my-resturant--card .my-resturant--avatar {
+    .my-restaurant--card .my-restaurant--avatar {
         width: 90px;
     }
-    .my-resturant--card .my-resturant--content {
+    .my-restaurant--card .my-restaurant--content {
         width: calc(100% - 90px);
     }
 }
 @media screen and (max-width: 460px) {
-    .my-resturant--card .my-resturant--avatar {
+    .my-restaurant--card .my-restaurant--avatar {
         width: 110px;
     }
-    .my-resturant--card .my-resturant--avatar img {
+    .my-restaurant--card .my-restaurant--avatar img {
         border-radius: 15px;
     }
-    .my-resturant--card .my-resturant--content {
+    .my-restaurant--card .my-restaurant--content {
         width: 100%;
         max-width: 100%;
         padding: 20px 0 0;
     }
 }
 @media screen and (max-width: 460px) {
-    .my-resturant--card {
+    .my-restaurant--card {
         padding: 20px;
     }
 }

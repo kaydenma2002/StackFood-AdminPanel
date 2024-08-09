@@ -52,7 +52,7 @@
                                                 data-original-title="{{ translate('Admin_can_enable/disable_restaurants’_order_cancellation_option.') }}">
                                                 <i class="tio-info-outined"></i>
                                             </span></label>
-                                        <div class="resturant-type-group border">
+                                        <div class="restaurant-type-group border">
                                             <label class="form-check form--check mr-2 mr-md-4">
                                                 <input class="form-check-input" type="radio" value="1"
                                                     name="canceled_by_restaurant" id="canceled_by_restaurant"

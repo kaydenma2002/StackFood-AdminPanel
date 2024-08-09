@@ -250,7 +250,7 @@
                                     </td>
                                     <td  class="text-capitalize">
                                         @if($order->restaurant)
-                                            <a href="{{ route('admin.restaurant.view', $order->restaurant->restaurant_id) }}">
+                                            <a href="{{ route('admin.restaurant.view', $order->restaurant->id) }}">
                                                 <div >
                                                         <strong class="d-block text-body">
                                                             {{ Str::limit($order->restaurant->name, 25, '...') }}<br>

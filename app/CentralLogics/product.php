@@ -596,19 +596,13 @@ class ProductLogic
     {
         $products = Food::active()->type($type)->where('restaurant_id',$restaurant_id)->whereHas('restaurant', function($q)use($zone_id){
             $q->whereIn('zone_id', $zone_id)->Weekday();
-        })->has('reviews')->popular()
+        })->popular()
         ->when(isset($name) , function($query)use($name){
             $query->where(function ($q) use ($name) {
                 foreach ($name as $value) {
                     $q->orWhere('name', 'like', "%{$value}%");
                 }
-                $q->orWhereHas('tags',function($query)use($name){
-                    $query->where(function($q)use($name){
-                        foreach ($name as $value) {
-                            $q->where('tag', 'like', "%{$value}%");
-                        };
-                    });
-                });
+
             });
         })
         ->limit(50)->get();

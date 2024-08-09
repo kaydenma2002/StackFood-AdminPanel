@@ -381,7 +381,7 @@ active
                             </span>
                             <span>{{ translate('Restaurant info') }}</span>
                         </h5>
-                        <a href="{{route('admin.restaurant.view', $advertisement->restaurant_id)}}" class="media align-items-start deco-none resturant--information-single">
+                        <a href="{{route('admin.restaurant.view', $advertisement->restaurant_id)}}" class="media align-items-start deco-none restaurant--information-single">
                             <div class="avatar avatar-circle">
                                 <img class="avatar-img w-75px" src="{{ $advertisement->restaurant['logo_full_url'] ?? dynamicAsset('public/assets/admin/img/100x100/food-default-image.png') }}" alt="image">
 

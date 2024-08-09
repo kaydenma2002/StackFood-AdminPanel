@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Category extends Model
 {
     use HasFactory;
-
+    protected $with = ['storage'];
     protected $casts = [
         'parent_id' => 'integer',
         'position' => 'integer',
@@ -24,6 +24,7 @@ class Category extends Model
     protected $appends = ['image_full_url'];
 
     public function getImageFullUrlAttribute(){
+
         $value = $this->image;
         if (count($this->storage) > 0) {
             foreach ($this->storage as $storage) {
@@ -66,6 +67,7 @@ class Category extends Model
     }
 
     public function getNameAttribute($value){
+
         if (count($this->translations) > 0) {
             foreach ($this->translations as $translation) {
                 if ($translation['key'] == 'name') {
@@ -82,20 +84,24 @@ class Category extends Model
         // static::addGlobalScope('storage', function ($builder) {
         //     $builder->with('storage');
         // });
+
         static::addGlobalScope('translate', function (Builder $builder) {
             $builder->with(['translations' => function ($query) {
                 return $query->where('locale', app()->getLocale());
             }]);
         });
+
     }
 
     protected static function boot()
     {
+
         parent::boot();
         static::created(function ($category) {
             $category->slug = $category->generateSlug($category->name);
             $category->save();
         });
+
         static::saved(function ($model) {
             if($model->isDirty('image')){
                 $value = Helpers::getDisk();
@@ -111,6 +117,7 @@ class Category extends Model
                 ]);
             }
         });
+
     }
     private function generateSlug($name)
     {

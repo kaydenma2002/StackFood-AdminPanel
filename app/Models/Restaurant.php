@@ -11,14 +11,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\ReportFilter;
+use Laravel\Scout\Searchable;
 
 class Restaurant extends Model
 {
 
-    use HasFactory, ReportFilter;
-    protected $fillable = ['food_section', 'status'];
+    use HasFactory, ReportFilter, Searchable;
+    protected $fillable = ['food_section', 'status', 'name'];
 
-    protected $with = ['restaurant_config'];
+    protected $with = ['restaurant_config', 'vendor', 'zone', 'cuisine', 'storage', 'translations'];
     public $incrementing = false;
     protected $primaryKey = 'restaurant_id';
     protected $casts = [
@@ -70,7 +71,8 @@ class Restaurant extends Model
      * @var array
      */
     protected $hidden = [
-        'gst', 'free_delivery_distance'
+        'gst',
+        'free_delivery_distance'
     ];
 
     public function getLogoFullUrlAttribute()
@@ -115,13 +117,13 @@ class Restaurant extends Model
 
     public function tags()
     {
-        return $this->belongsToMany(Tag::class,'restaurant_tag','restaurant_id','tag_id');
+        return $this->belongsToMany(Tag::class, 'restaurant_tag', 'restaurant_id', 'tag_id');
     }
 
 
     public function characteristics()
     {
-        return $this->belongsToMany(Characteristic::class,'characteristic_restaurant','restaurant_id','characteristic_id');
+        return $this->belongsToMany(Characteristic::class, 'characteristic_restaurant', 'restaurant_id', 'characteristic_id');
     }
 
     public function restaurant_config()
@@ -153,7 +155,7 @@ class Restaurant extends Model
 
     public function restaurant_sub()
     {
-        return $this->hasOne(RestaurantSubscription::class)->where('status', 1)->latest();
+        return $this->hasOne(RestaurantSubscription::class, 'restaurant_id', 'restaurant_id')->where('status', 1)->latest();
     }
 
     public function restaurant_subs()
@@ -186,7 +188,7 @@ class Restaurant extends Model
 
     public function schedules()
     {
-        return $this->hasMany(RestaurantSchedule::class,'restaurant_id','restaurant_id')->orderBy('opening_time');
+        return $this->hasMany(RestaurantSchedule::class, 'restaurant_id', 'restaurant_id')->orderBy('opening_time');
     }
 
     public function deliverymen()
@@ -196,7 +198,7 @@ class Restaurant extends Model
 
     public function orders()
     {
-        return $this->hasMany(Order::class,'restaurant_id','restaurant_id');
+        return $this->hasMany(Order::class, 'restaurant_id', 'restaurant_id');
     }
 
     public function wishlists()
@@ -206,7 +208,7 @@ class Restaurant extends Model
 
     public function discount()
     {
-        return $this->hasOne(Discount::class,'restaurant_id','restaurant_id');
+        return $this->hasOne(Discount::class, 'restaurant_id', 'restaurant_id');
     }
 
     public function zone()
@@ -216,7 +218,7 @@ class Restaurant extends Model
 
     public function campaigns()
     {
-        return $this->belongsToMany(Campaign::class,'campaign_restaurant','restaurant_id','campaign_id');
+        return $this->belongsToMany(Campaign::class, 'campaign_restaurant', 'restaurant_id', 'campaign_id');
     }
 
     public function itemCampaigns()
@@ -419,8 +421,7 @@ class Restaurant extends Model
 
     public function cuisine()
     {
-        return $this->belongsTo(Cuisine::class,'cuisine_id','id');
-
+        return $this->belongsToMany(Cuisine::class, 'cuisine_restaurant', 'restaurant_id', 'cuisine_id');
     }
     public function disbursement_method()
     {
@@ -475,5 +476,16 @@ class Restaurant extends Model
                 return $query->where('locale', app()->getLocale());
             }]);
         });
+    }
+    public function toSearchableArray()
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'zone_id' => $this->zone_id,
+            'active' => $this->active,
+            'weekday' => $this->weekday, // Assuming 'weekday' is an attribute
+            // Add other fields as necessary
+        ];
     }
 }

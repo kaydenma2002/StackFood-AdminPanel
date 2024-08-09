@@ -38,7 +38,7 @@
                                 </span>
                             </h5>
                             <label class="toggle-switch toggle-switch-sm">
-                            
+
                                 <input type="checkbox" class="status toggle-switch-input dynamic-checkbox"
                                 data-id="mail-status"
                                 data-type="status"

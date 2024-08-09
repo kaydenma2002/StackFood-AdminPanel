@@ -164,7 +164,7 @@
                             </div>
                         </div>
                     @endif
-        
+
                     @php($config=\App\CentralLogics\Helpers::get_business_settings('paystack'))
                     @if($config['status'])
                         <div class="col-md-6 mb-4 cursor-pointer">
@@ -378,7 +378,7 @@
             }
         });
     }
-    
+
     function showLoader() {
         const loader = document.createElement("div");
         loader.style.position = "fixed";

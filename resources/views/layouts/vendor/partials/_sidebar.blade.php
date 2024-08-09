@@ -511,7 +511,7 @@
                     <li class="navbar-vertical-aside-has-menu {{Request::is('restaurant-panel/restaurant/view')?'active':''}}">
                         <a class="js-navbar-vertical-aside-menu-link nav-link"
                             href="{{route('vendor.shop.view')}}"
-                            title="{{translate('My Resturant')}}">
+                            title="{{translate('My Restaurant')}}">
                             <i class="tio-home nav-icon"></i>
                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
                                 {{translate('messages.my_shop')}}
@@ -521,7 +521,7 @@
                     <li class="navbar-vertical-aside-has-menu {{Request::is('restaurant-panel/restaurant/qr-view')?'active':''}}">
                         <a class="js-navbar-vertical-aside-menu-link nav-link"
                             href="{{route('vendor.shop.qr-view')}}"
-                            title="{{translate('My Resturant')}}">
+                            title="{{translate('My Restaurant')}}">
                             <i class="tio-qr-code nav-icon"></i>
                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
                                 {{translate('messages.my_qr_code')}}

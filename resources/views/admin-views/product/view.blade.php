@@ -230,7 +230,7 @@ $reviewsInfo = $product->rating()->first();
 
                     <div class="card-body d-flex flex-column justify-content-center">
                     @if($product->restaurant)
-                        <a class="resturant--information-single" href="{{route('admin.restaurant.view', $product->restaurant_id)}}" title="{{$product->restaurant['name']}}">
+                        <a class="restaurant--information-single" href="{{route('admin.restaurant.view', $product->restaurant_id)}}" title="{{$product->restaurant['name']}}">
                             <img class="avatar-img initial-54 onerror-image"
                                  data-onerror-image="{{ dynamicAsset('public/assets/admin/img/160x160/img1.jpg') }}"
 

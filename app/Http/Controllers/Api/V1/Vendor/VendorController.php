@@ -697,7 +697,7 @@ class VendorController extends Controller
                 return $q->whereId($category_id)->orWhere('parent_id', $category_id);
             });
         }
-        $paginator = $paginator->where('restaurant_id', $request['vendor']->restaurant[0]->restaurant_id)->latest()->paginate($limit, ['*'], 'page', $offset);
+        $paginator = $paginator->where('restaurant_id', $request['vendor']->restaurants[0]->id)->latest()->paginate($limit, ['*'], 'page', $offset);
         $data = [
             'total_size' => $paginator->total(),
             'limit' => $limit,

@@ -17,6 +17,7 @@
 
 
         <!-- Filters -->
+
         <div class="card shadow--card p-0 mb-4">
             <div class="card-body">
                 <div class="row g-3">
@@ -35,6 +36,7 @@
                         <!-- End Veg/NonVeg filter -->
                     </div>
                 </div>
+
                 <div class="col-sm-6 col-md-3">
                     <div class="select-item">
                         <!-- Veg/NonVeg filter -->
@@ -61,14 +63,17 @@
                         data-placeholder="{{ translate('messages.select_Cuisine') }}"
                         class="form-control h--45px js-select2-custom set-filter">
                         <option value="all" selected >{{ translate('messages.select_Cuisine') }}</option>
+
                         @foreach (\App\Models\Cuisine::orderBy('name')->get(['id','name']) as $cu)
                             <option value="{{ $cu['id'] }}"
-                                {{ $cuisine_id ==  $cu['id']? 'selected' : '' }}>
+                                {{ $cuisine_id ==  $cu['id']? $cuisine_id : $cu['id']}}>
                                 {{ $cu['name'] }}</option>
                         @endforeach
+
                     </select>
                     </div>
                 </div>
+
                 @if(!isset(auth('admin')->user()->zone_id))
                     <div class="col-sm-6 col-md-3">
                         <div class="select-item">
@@ -95,15 +100,15 @@
         <!-- Resturent Card Wrapper -->
         <div class="row g-3 mb-3">
             <div class="col-xl-3 col-sm-6">
-                <div class="resturant-card bg--1">
+                <div class="restaurant-card bg--1">
                     <h4 class="title" id="itemCount" >{{$restaurants->total()}}</h4>
                     <span class="subtitle">{{translate('messages.total_restaurants')}}</span>
-                    <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/resturant/map-pin.png')}}" alt="resturant">
+                    <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/restaurant/map-pin.png')}}" alt="restaurant">
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6">
 
-                <div class="resturant-card bg--2">
+                <div class="restaurant-card bg--2">
                     @php($active_restaurants = \App\Models\Restaurant::where(['status'=>1])
                      ->whereHas('vendor', function($q){
                             $q->where('status',1);
@@ -116,11 +121,11 @@
                     @php($active_restaurants = isset($active_restaurants) ? $active_restaurants : 0)
                     <h4 class="title">{{$active_restaurants}}</h4>
                     <span class="subtitle">{{translate('messages.active_restaurants')}}</span>
-                    <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/resturant/active-rest.png')}}" alt="resturant">
+                    <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/restaurant/active-rest.png')}}" alt="restaurant">
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6">
-                <div class="resturant-card bg--3">
+                <div class="restaurant-card bg--3">
                     @php($inactive_restaurants = \App\Models\Restaurant::where(['status'=>0])
                      ->whereHas('vendor', function($q){
                             $q->where('status',1);
@@ -133,11 +138,11 @@
                     @php($inactive_restaurants = isset($inactive_restaurants) ? $inactive_restaurants : 0)
                     <h4 class="title">{{$inactive_restaurants}}</h4>
                     <span class="subtitle">{{translate('messages.inactive_restaurants')}}</span>
-                    <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/resturant/inactive-rest.png')}}" alt="resturant">
+                    <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/restaurant/inactive-rest.png')}}" alt="restaurant">
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6">
-                <div class="resturant-card bg--4">
+                <div class="restaurant-card bg--4">
                     @php($data = \App\Models\Restaurant::where('created_at', '>=', now()->subDays(30)->toDateTimeString())
                     ->whereHas('vendor', function($q){
                             $q->where('status',1);
@@ -149,7 +154,7 @@
                     ->count())
                     <h4 class="title">{{$data}}</h4>
                     <span class="subtitle">{{translate('messages.newly_joined_restaurants')}}</span>
-                    <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/resturant/new-rest.png')}}" alt="resturant">
+                    <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/restaurant/new-rest.png')}}" alt="restaurant">
                 </div>
             </div>
         </div>
@@ -241,7 +246,7 @@
                     <!-- Card Header -->
 
                     <!-- Table -->
-                    <div class="table-responsive datatable-custom resturant-list-table">
+                    <div class="table-responsive datatable-custom restaurant-list-table">
                         <table id="columnSearchDatatable"
                                class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
                                data-hs-datatables-options='{
@@ -303,13 +308,14 @@
                                     </td>
                                     <td>
 
-                                        @if ($dm->cuisine)
-                                        <div class="white-space-initial" data-toggle="tooltip" data-placement="bottom" title="{{$dm->cuisine->name}}">
-                                            <span  >
-                                            {{$dm->cuisine->name}}
+                                        @foreach($dm->cuisine as $cuisine)
+                                        <div class="white-space-initial" data-toggle="tooltip" data-placement="bottom" title="{{ $cuisine->name ?? 'Vietnamese' }}">
+                                            <span>
+                                                {{ $cuisine->name ?? 'Vietnamese' }}
                                             </span>
                                         </div>
-                                        @endif
+                                        @endforeach
+
                                 </td>
                                     <td>
                                         @if(isset($dm->vendor->status))

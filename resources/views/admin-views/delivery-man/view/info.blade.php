@@ -68,40 +68,40 @@
                     <div class="row g-3 justify-content-center">
                         <!-- Earnings (Monthly) Card Example -->
                         <div class="col-sm-6 col-md-4">
-                            <div class="resturant-card bg--2">
+                            <div class="restaurant-card bg--2">
                                 <h2 class="title">
                                     {{$dm->orders->count()}}
                                 </h2>
                                 <h5 class="subtitle">
                                     {{translate('messages.total_delivered_orders')}}
                                 </h5>
-                                <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/tick.png')}}" alt="img">
+                                <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/tick.png')}}" alt="img">
                             </div>
                         </div>
 
                         <!-- Collected Cash Card Example -->
                         <div class="col-sm-6 col-md-4">
-                            <div class="resturant-card bg--3">
+                            <div class="restaurant-card bg--3">
                                 <h2 class="title">
                                     {{\App\CentralLogics\Helpers::format_currency($dm->wallet?($dm->wallet->collected_cash > 0 ? $dm->wallet->collected_cash: 0):0.0)}}
                                 </h2>
                                 <h5 class="subtitle">
                                     {{translate('messages.cash_in_hand')}}
                                 </h5>
-                                <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/withdraw-amount.png')}}" alt="transactions">
+                                <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/withdraw-amount.png')}}" alt="transactions">
                             </div>
                         </div>
 
                         <!-- Total Earning Card Example -->
                         <div class="col-sm-6 col-md-4">
-                            <div class="resturant-card bg--6">
+                            <div class="restaurant-card bg--6">
                                 <h2 class="title">
                                     {{\App\CentralLogics\Helpers::format_currency($dm->wallet?($dm->wallet->total_earning > 0 ? $dm->wallet->total_earning : 0):0.00)}}
                                 </h2>
                                 <h5 class="subtitle">
                                     {{translate('messages.total_earning')}}
                                 </h5>
-                                <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/earning.png')}}" alt="transactions">
+                                <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/earning.png')}}" alt="transactions">
                             </div>
                         </div>
 
@@ -118,39 +118,39 @@
 
                             @if ($balance > 0)
                                 <div class="col-sm-6 col-md-4">
-                                    <div class="resturant-card bg--4">
+                                    <div class="restaurant-card bg--4">
                                         <h2 class="title">
                                             {{\App\CentralLogics\Helpers::format_currency(abs($balance))}}
                                         </h2>
                                         <h5 class="subtitle">
                                             {{translate('messages.Withdraw_Able_Balance')}}
                                         </h5>
-                                        <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/cash.png')}}" alt="transactions">
+                                        <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/cash.png')}}" alt="transactions">
                                     </div>
                                 </div>
                             @elseif($balance < 0)
                                 <div class="col-sm-6 col-md-4">
-                                    <div class="resturant-card bg--4">
+                                    <div class="restaurant-card bg--4">
                                         <h2 class="title">
                                             {{\App\CentralLogics\Helpers::format_currency(abs($dm->wallet->collected_cash))}}
                                         </h2>
                                         <h5 class="subtitle">
                                             {{translate('messages.Payable_Balance')}}
                                         </h5>
-                                        <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/cash.png')}}" alt="transactions">
+                                        <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/cash.png')}}" alt="transactions">
                                     </div>
                                 </div>
 
                                 @else
                                 <div class="col-sm-6 col-md-4">
-                                    <div class="resturant-card bg--4">
+                                    <div class="restaurant-card bg--4">
                                         <h2 class="title">
                                             {{\App\CentralLogics\Helpers::format_currency(0)}}
                                         </h2>
                                         <h5 class="subtitle">
                                             {{translate('messages.Balance')}}
                                         </h5>
-                                        <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/cash.png')}}" alt="transactions">
+                                        <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/cash.png')}}" alt="transactions">
                                     </div>
                                 </div>
 
@@ -158,26 +158,26 @@
 
 
                         <div class="col-sm-6 col-md-4">
-                            <div class="resturant-card bg--5">
+                            <div class="restaurant-card bg--5">
                                 <h2 class="title">
                                     {{\App\CentralLogics\Helpers::format_currency($dm->wallet?($dm->wallet->total_withdrawn > 0 ? $dm->wallet->total_withdrawn : 0):0.00)}}
                                 </h2>
                                 <h5 class="subtitle">
                                     {{translate('messages.Total_withdrawn')}}
                                 </h5>
-                                <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/pending.png')}}" alt="transactions">
+                                <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/pending.png')}}" alt="transactions">
                             </div>
                         </div>
 
                         <div class="col-sm-6 col-md-4">
-                            <div class="resturant-card bg--1">
+                            <div class="restaurant-card bg--1">
                                 <h2 class="title">
                                     {{\App\CentralLogics\Helpers::format_currency($dm->wallet?($dm->wallet->pending_withdraw > 0 ? $dm->wallet->pending_withdraw : 0 ):0.00)}}
                                 </h2>
                                 <h5 class="subtitle">
                                     {{translate('messages.Pending_withdraw')}}
                                 </h5>
-                                <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/image_withdaw.png')}}" alt="transactions">
+                                <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/image_withdaw.png')}}" alt="transactions">
                             </div>
                         </div>
 

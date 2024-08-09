@@ -27,32 +27,32 @@
 
 <div class="row g-2">
     <div class="col-xl-3 col-sm-6">
-        <div class="resturant-card dashboard--card bg--2 cursor-pointer redirect-url" data-url="{{route('admin.order.list',['delivered'])}}">
+        <div class="restaurant-card dashboard--card bg--2 cursor-pointer redirect-url" data-url="{{route('admin.order.list',['delivered'])}}">
 
             <h4 class="title">{{$data['delivered']}}</h4>
             <span class="subtitle">{{translate('messages.delivered_orders')}}</span>
-            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/1.png')}}" alt="dashboard">
+            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/1.png')}}" alt="dashboard">
         </div>
     </div>
     <div class="col-xl-3 col-sm-6">
-        <div class="resturant-card dashboard--card bg--3 cursor-pointer redirect-url" data-url="{{route('admin.order.list',['canceled'])}}">
+        <div class="restaurant-card dashboard--card bg--3 cursor-pointer redirect-url" data-url="{{route('admin.order.list',['canceled'])}}">
             <h4 class="title">{{$data['canceled']}}</h4>
             <span class="subtitle">{{translate('messages.canceled_orders')}}</span>
-            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/2.png')}}" alt="dashboard">
+            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/2.png')}}" alt="dashboard">
         </div>
     </div>
     <div class="col-xl-3 col-sm-6">
-        <div class="resturant-card dashboard--card bg--5 cursor-pointer redirect-url" data-url="{{route('admin.order.list',['refunded'])}}">
+        <div class="restaurant-card dashboard--card bg--5 cursor-pointer redirect-url" data-url="{{route('admin.order.list',['refunded'])}}">
             <h4 class="title">{{$data['refunded']}}</h4>
             <span class="subtitle">{{translate('messages.refunded_orders')}}</span>
-            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/3.png')}}" alt="dashboard">
+            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/3.png')}}" alt="dashboard">
         </div>
     </div>
     <div class="col-xl-3 col-sm-6">
-        <div class="resturant-card dashboard--card bg--14 cursor-pointer redirect-url" data-url="{{route('admin.order.list',['failed'])}}">
+        <div class="restaurant-card dashboard--card bg--14 cursor-pointer redirect-url" data-url="{{route('admin.order.list',['failed'])}}">
             <h4 class="title">{{$data['refund_requested']}}</h4>
             <span class="subtitle">{{translate('messages.payment_failed_orders')}}</span>
-            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/4.png')}}" alt="dashboard">
+            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/4.png')}}" alt="dashboard">
         </div>
     </div>
 </div>

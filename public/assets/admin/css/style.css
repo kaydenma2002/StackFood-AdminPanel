@@ -3378,19 +3378,19 @@ span.initial-38-7,
     width: 35px !important;
 }
 
-.resturant-card.bg--1 .title {
+.restaurant-card.bg--1 .title {
     color: #006ab4;
 }
 
-.resturant-card.bg--2 .title {
+.restaurant-card.bg--2 .title {
     color: #008958;
 }
 
-.resturant-card.bg--3 .title {
+.restaurant-card.bg--3 .title {
     color: #ff4d00;
 }
 
-.resturant-card.bg--4 .title {
+.restaurant-card.bg--4 .title {
     color: #a47000;
 }
 
@@ -6544,18 +6544,18 @@ textarea.form-control.h-100px {
     }
 }
 
-.resturant-card,
+.restaurant-card,
 .order--card,
 .most-popular__restaurant li,
-.top--resturant li .top--resturant-item,
+.top--restaurant li .top--restaurant-item,
 .grid-card {
     transition: all 300ms ease;
 }
 
-.resturant-card:hover,
+.restaurant-card:hover,
 .order--card:hover,
 .most-popular__restaurant li:hover,
-.top--resturant li .top--resturant-item:hover,
+.top--restaurant li .top--restaurant-item:hover,
 .grid-card:hover {
     box-shadow: 0px 8px 8px rgba(51, 66, 87, 0.1) !important;
 }
@@ -6985,7 +6985,7 @@ textarea.form-control.h-100px {
     font-size: 12px;
 }
 
-.top--resturant li .top--resturant-item {
+.top--restaurant li .top--restaurant-item {
     padding: 18px 12px;
 }
 

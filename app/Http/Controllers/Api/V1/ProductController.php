@@ -32,8 +32,8 @@ class ProductController extends Controller
 
         $type = $request->query('type', 'all');
 
-        $products = ProductLogic::get_latest_products(limit:$request['limit'], offset:$request['offset'],restaurant_id: $request['restaurant_id'],category_id: $request['category_id'], type:$type);
-        $products['products'] = Helpers::product_data_formatting(data:$products['products'],multi_data: true, trans:false,local: app()->getLocale());
+        $products = ProductLogic::get_latest_products(limit: $request['limit'], offset: $request['offset'], restaurant_id: $request['restaurant_id'], category_id: $request['category_id'], type: $type);
+        $products['products'] = Helpers::product_data_formatting(data: $products['products'], multi_data: true, trans: false, local: app()->getLocale());
         return response()->json($products, 200);
     }
 
@@ -49,25 +49,25 @@ class ProductController extends Controller
 
         $search_bar_default_status = \App\Models\BusinessSetting::where('key', 'search_bar_default_status')->first();
         $search_bar_default_status = $search_bar_default_status ? $search_bar_default_status->value : 1;
-        $search_bar_sort_by_unavailable = \App\Models\PriorityList::where('name', 'search_bar_sort_by_unavailable')->where('type','unavailable')->first();
+        $search_bar_sort_by_unavailable = \App\Models\PriorityList::where('name', 'search_bar_sort_by_unavailable')->where('type', 'unavailable')->first();
         $search_bar_sort_by_unavailable = $search_bar_sort_by_unavailable ? $search_bar_sort_by_unavailable->value : '';
-        $search_bar_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'search_bar_sort_by_temp_closed')->where('type','temp_closed')->first();
+        $search_bar_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'search_bar_sort_by_temp_closed')->where('type', 'temp_closed')->first();
         $search_bar_sort_by_temp_closed = $search_bar_sort_by_temp_closed ? $search_bar_sort_by_temp_closed->value : '';
 
-        $zone_id= json_decode($request->header('zoneId'), true);
+        $zone_id = json_decode($request->header('zoneId'), true);
 
         $key = isset($request['name']) && $request['name'] != 'null'  ?  explode(' ', $request['name']) : null;
 
-        if(is_array($key)){
+        if (is_array($key)) {
             $key = array_filter($key);
             $key = array_values($key);
         }
 
-        $limit = $request['limit']??10;
-        $offset = $request['offset']??1;
+        $limit = $request['limit'] ?? 10;
+        $offset = $request['offset'] ?? 1;
         $type = $request->query('type', 'all');
         $query = Food::Active()->type($type)
-            ->whereHas('restaurant', function($q)use($zone_id){
+            ->whereHas('restaurant', function ($q) use ($zone_id) {
                 $q->whereIn('zone_id', $zone_id);
             })
             ->select(['food.*'])
@@ -81,97 +81,97 @@ class ProductController extends Controller
                     ->from('restaurants')
                     ->whereColumn('restaurants.restaurant_id', 'food.restaurant_id');
             }, 'open')
-            ->when($request->category_id, function($query)use($request){
-                $query->whereHas('category',function($q)use($request){
+            ->when($request->category_id, function ($query) use ($request) {
+                $query->whereHas('category', function ($q) use ($request) {
                     return $q->whereId($request->category_id)->orWhere('parent_id', $request->category_id);
                 });
             })
-            ->when($request->restaurant_id, function($query) use($request){
+            ->when($request->restaurant_id, function ($query) use ($request) {
                 return $query->where('restaurant_id', $request->restaurant_id);
             })
 
 
-            ->when($request->new == 1, function($query){
+            ->when($request->new == 1, function ($query) {
                 return $query->latest();
             })
-            ->when( $request->popular == 1, function($query){
+            ->when($request->popular == 1, function ($query) {
                 return $query->popular();
             })
-            ->when($request->rating == 1, function($query){
-                return $query->has('reviews')->withCount('reviews')->orderBy('reviews_count','desc');
+            ->when($request->rating == 1, function ($query) {
+                return $query->has('reviews')->withCount('reviews')->orderBy('reviews_count', 'desc');
             })
 
-            ->when($request->rating_3_plus == 1, function($query){
-                $query->where('avg_rating', '>' , 3);
+            ->when($request->rating_3_plus == 1, function ($query) {
+                $query->where('avg_rating', '>', 3);
             })
-            ->when(($request->rating_4_plus == 1 && !($request->rating_5  == 1 || $request->rating_3_plus == 1 ) || ($request->rating_4_plus == 1 && $request->rating_5  == 1 && $request->rating_3_plus != 1) ), function($query){
-                $query->where('avg_rating', '>' , 4);
+            ->when(($request->rating_4_plus == 1 && !($request->rating_5  == 1 || $request->rating_3_plus == 1) || ($request->rating_4_plus == 1 && $request->rating_5  == 1 && $request->rating_3_plus != 1)), function ($query) {
+                $query->where('avg_rating', '>', 4);
             })
-            ->when($request->rating_5 == 1 && !($request->rating_4_plus  == 1 || $request->rating_3_plus == 1) , function($query){
-                $query->where('avg_rating', '>=' , 5);
+            ->when($request->rating_5 == 1 && !($request->rating_4_plus  == 1 || $request->rating_3_plus == 1), function ($query) {
+                $query->where('avg_rating', '>=', 5);
             })
 
-            ->when($request->discounted == 1, function($query){
-                return $query->where(function($q){
-                    $q->Has('restaurant.discount')->orwhere('discount', '>' , 0);
+            ->when($request->discounted == 1, function ($query) {
+                return $query->where(function ($q) {
+                    $q->Has('restaurant.discount')->orwhere('discount', '>', 0);
                 });
             })
 
-            ->when(isset($key) , function($q) use($key){
+            ->when(isset($key), function ($q) use ($key) {
                 $q->where(function ($q) use ($key) {
                     foreach ($key as $value) {
                         $q->orWhere('name', 'like', "%{$value}%");
                     }
-                    $q->orWhereHas('translations',function($query)use($key){
-                        $query->where(function($q)use($key){
+                    $q->orWhereHas('translations', function ($query) use ($key) {
+                        $query->where(function ($q) use ($key) {
                             foreach ($key as $value) {
                                 $q->where('value', 'like', "%{$value}%");
                             };
                         });
                     });
-                    $q->orWhereHas('tags',function($query)use($key){
-                        $query->where(function($q1)use($key){
+                    $q->orWhereHas('tags', function ($query) use ($key) {
+                        $query->where(function ($q1) use ($key) {
                             foreach ($key as $value) {
                                 $q1->where('tag', 'like', "%{$value}%");
                             };
                         });
                     })
-                    ->orWhereHas('restaurant.cuisine',function($query) use($key){
-                        $query->where(function($q2)use($key){
-                            foreach ($key as $value) {
-                                $q2->where('name', 'like', "%{$value}%");
-                            };
+                        ->orWhereHas('restaurant.cuisine', function ($query) use ($key) {
+                            $query->where(function ($q2) use ($key) {
+                                foreach ($key as $value) {
+                                    $q2->where('name', 'like', "%{$value}%");
+                                };
+                            });
                         });
-                    });
                 });
             })
 
-            ->when(isset($request->sort_by) && ($request->sort_by == 'asc' || $request->sort_by == 'desc'), function($query)use($request){
-                            return $query->orderBy('name' , $request->sort_by);
-                        })
-            ->when(isset($request->sort_by) && ( $request->sort_by == 'low') , function($query)use($request){
-                            return $query->orderBy('price' ,'asc', );
-                        })
-            ->when(isset($request->sort_by) && ( $request->sort_by == 'high') , function($query)use($request){
-                            return $query->orderBy('price' ,'desc', );
-                        })
+            ->when(isset($request->sort_by) && ($request->sort_by == 'asc' || $request->sort_by == 'desc'), function ($query) use ($request) {
+                return $query->orderBy('name', $request->sort_by);
+            })
+            ->when(isset($request->sort_by) && ($request->sort_by == 'low'), function ($query) use ($request) {
+                return $query->orderBy('price', 'asc',);
+            })
+            ->when(isset($request->sort_by) && ($request->sort_by == 'high'), function ($query) use ($request) {
+                return $query->orderBy('price', 'desc',);
+            })
 
             ->orderByRaw("FIELD(name, ?) DESC", [$request['name']]);
 
-        if ($search_bar_default_status == '1'){
+        if ($search_bar_default_status == '1') {
             $query = $query->latest();
-        }elseif ($search_bar_default_status == '0'){
+        } elseif ($search_bar_default_status == '0') {
             $time = Carbon::now()->toTimeString();
 
-            if($search_bar_sort_by_unavailable == 'remove'){
+            if ($search_bar_sort_by_unavailable == 'remove') {
                 $query = $query->available($time);
-            }elseif($search_bar_sort_by_unavailable == 'last'){
+            } elseif ($search_bar_sort_by_unavailable == 'last') {
                 $query = $query->orderBy(DB::raw("CASE WHEN available_time_starts <= '$time' AND available_time_ends >= '$time' THEN 0 ELSE 1 END"));
             }
 
-            if($search_bar_sort_by_temp_closed == 'remove'){
+            if ($search_bar_sort_by_temp_closed == 'remove') {
                 $query = $query->having('temp_available', '>', 0);
-            }elseif($search_bar_sort_by_temp_closed == 'last'){
+            } elseif ($search_bar_sort_by_temp_closed == 'last') {
                 $query = $query->orderByDesc('temp_available');
             }
         }
@@ -184,7 +184,7 @@ class ProductController extends Controller
             'products' => $products->items()
         ];
 
-        $data['products'] = Helpers::product_data_formatting(data:$data['products'],multi_data: true, trans:false,local: app()->getLocale());
+        $data['products'] = Helpers::product_data_formatting(data: $data['products'], multi_data: true, trans: false, local: app()->getLocale());
         return response()->json($data, 200);
     }
 
@@ -199,11 +199,11 @@ class ProductController extends Controller
         }
 
         $type = $request->query('type', 'all');
-        $longitude= $request->header('longitude');
-        $latitude= $request->header('latitude');
-        $zone_id= json_decode($request->header('zoneId'), true);
-        $products = ProductLogic::popular_products(zone_id:$zone_id, limit:$request['limit'],offset: $request['offset'],type: $type,longitude:$longitude,latitude:$latitude);
-        $products['products'] = Helpers::product_data_formatting(data:$products['products'], multi_data:true, trans:false, local:app()->getLocale());
+        $longitude = $request->header('longitude');
+        $latitude = $request->header('latitude');
+        $zone_id = json_decode($request->header('zoneId'), true);
+        $products = ProductLogic::popular_products(zone_id: $zone_id, limit: $request['limit'], offset: $request['offset'], type: $type, longitude: $longitude, latitude: $latitude);
+        $products['products'] = Helpers::product_data_formatting(data: $products['products'], multi_data: true, trans: false, local: app()->getLocale());
         return response()->json($products, 200);
     }
 
@@ -218,33 +218,28 @@ class ProductController extends Controller
         }
 
         $type = $request->query('type', 'all');
-        $zone_id= json_decode($request->header('zoneId'), true);
-        $longitude= $request->header('longitude');
-        $latitude= $request->header('latitude');
-        $products = ProductLogic::most_reviewed_products(zone_id:$zone_id,limit: $request['limit'], offset:$request['offset'], type:$type,longitude:$longitude,latitude:$latitude);
-        $products['products'] = Helpers::product_data_formatting(data:$products['products'],multi_data: true, trans:false, local:app()->getLocale());
+        $zone_id = json_decode($request->header('zoneId'), true);
+        $longitude = $request->header('longitude');
+        $latitude = $request->header('latitude');
+        $products = ProductLogic::most_reviewed_products(zone_id: $zone_id, limit: $request['limit'], offset: $request['offset'], type: $type, longitude: $longitude, latitude: $latitude);
+        $products['products'] = Helpers::product_data_formatting(data: $products['products'], multi_data: true, trans: false, local: app()->getLocale());
         return response()->json($products, 200);
     }
 
     public function get_product($id)
     {
-        try {
-            $product = ProductLogic::get_product($id , request()?->campaign ? true : false);
-            $product = Helpers::product_data_formatting(data:$product, multi_data:false, trans:false, local:app()->getLocale());
-            return response()->json($product, 200);
-        } catch (\Exception $e) {
-            info($e->getMessage());
-            return response()->json([
-                'errors' => ['code' => 'product-001', 'message' => translate('messages.not_found')]
-            ], 404);
-        }
+
+
+        $product = ProductLogic::get_product($id, request()?->campaign ? true : false);
+        $product = Helpers::product_data_formatting(data: $product, multi_data: false, trans: false, local: app()->getLocale());
+        return response()->json($product, 200);
     }
 
     public function get_related_products($id)
     {
         if (Food::find($id)) {
-            $products = ProductLogic::get_related_products(product_id:$id);
-            $products = Helpers::product_data_formatting(data:$products,multi_data: true, trans:false, local:app()->getLocale());
+            $products = ProductLogic::get_related_products(product_id: $id);
+            $products = Helpers::product_data_formatting(data: $products, multi_data: true, trans: false, local: app()->getLocale());
             return response()->json($products, 200);
         }
         return response()->json([
@@ -255,7 +250,7 @@ class ProductController extends Controller
     public function get_set_menus()
     {
         try {
-            $products = Helpers::product_data_formatting(data:Food::active()->with(['rating'])->where(['set_menu' => 1, 'status' => 1])->get(),multi_data: true, trans:false, local:app()->getLocale());
+            $products = Helpers::product_data_formatting(data: Food::active()->with(['rating'])->where(['set_menu' => 1, 'status' => 1])->get(), multi_data: true, trans: false, local: app()->getLocale());
             return response()->json($products, 200);
         } catch (\Exception $e) {
             info($e->getMessage());
@@ -273,11 +268,9 @@ class ProductController extends Controller
         foreach ($reviews as $item) {
             $item['attachment'] = json_decode($item['attachment']);
             $item['food_name'] = null;
-            if($item?->food)
-            {
+            if ($item?->food) {
                 $item['food_name'] = $item?->food?->name;
-                if(count($item?->food?->translations)>0)
-                {
+                if (count($item?->food?->translations) > 0) {
                     $translate = array_column($item->food->translations->toArray(), 'value', 'key');
                     $item['food_name'] = $translate['name'];
                 }
@@ -292,7 +285,7 @@ class ProductController extends Controller
     {
         try {
             $product = Food::find($id);
-            $overallRating = ProductLogic::get_overall_rating(reviews:$product->reviews);
+            $overallRating = ProductLogic::get_overall_rating(reviews: $product->reviews);
             return response()->json(floatval($overallRating[0]), 200);
         } catch (\Exception $e) {
             return response()->json(['errors' => $e->getMessage()], 403);
@@ -314,11 +307,11 @@ class ProductController extends Controller
             $validator->errors()->add('food_id', translate('messages.food_not_found'));
         }
 
-        $multi_review = Review::where(['food_id' => $request->food_id, 'user_id' => $request?->user()?->id, 'order_id'=>$request->order_id])->first();
+        $multi_review = Review::where(['food_id' => $request->food_id, 'user_id' => $request?->user()?->id, 'order_id' => $request->order_id])->first();
         if (isset($multi_review)) {
             return response()->json([
                 'errors' => [
-                    ['code'=>'review','message'=> translate('messages.already_submitted')]
+                    ['code' => 'review', 'message' => translate('messages.already_submitted')]
                 ]
             ], 403);
         } else {
@@ -349,15 +342,14 @@ class ProductController extends Controller
         $review->attachment = json_encode($image_array);
         $review->save();
 
-        if($product->restaurant)
-        {
-            $restaurant_rating = RestaurantLogic::update_restaurant_rating(ratings:$product?->restaurant?->rating, product_rating:$request->rating);
+        if ($product->restaurant) {
+            $restaurant_rating = RestaurantLogic::update_restaurant_rating(ratings: $product?->restaurant?->rating, product_rating: $request->rating);
             $product->restaurant->rating = $restaurant_rating;
             $product?->restaurant?->save();
         }
 
-        $product->rating = ProductLogic::update_rating(ratings:$product->rating, product_rating:$request->rating);
-        $product->avg_rating = ProductLogic::get_avg_rating(rating:json_decode($product->rating, true));
+        $product->rating = ProductLogic::update_rating(ratings: $product->rating, product_rating: $request->rating);
+        $product->avg_rating = ProductLogic::get_avg_rating(rating: json_decode($product->rating, true));
         $product?->save();
         $product->increment('rating_count');
 
@@ -383,17 +375,17 @@ class ProductController extends Controller
         }
         $type = $request->query('type', 'all');
         $key = explode(' ', $request['name']);
-        $zone_id= json_decode($request->header('zoneId'), true);
-        $products = ProductLogic::recommended_products(zone_id:$zone_id, restaurant_id:$request->restaurant_id,limit:$request['limit'],offset: $request['offset'],type: $type ,name:$key );
-        $products['products'] = Helpers::product_data_formatting(data:$products['products'],multi_data: true, trans:false, local:app()->getLocale());
+        $zone_id = json_decode($request->header('zoneId'), true);
+        $products = ProductLogic::recommended_products(zone_id: $zone_id, restaurant_id: $request->restaurant_id, limit: $request['limit'], offset: $request['offset'], type: $type, name: $key);
+        $products['products'] = Helpers::product_data_formatting(data: $products['products'], multi_data: true, trans: false, local: app()->getLocale());
         return response()->json($products, 200);
     }
 
 
 
 
-    public function food_or_restaurant_search(Request $request){
-
+    public function food_or_restaurant_search(Request $request)
+    {
         if (!$request->hasHeader('zoneId')) {
             $errors = [];
             array_push($errors, ['code' => 'zoneId', 'message' => translate('messages.zone_id_required')]);
@@ -408,69 +400,43 @@ class ProductController extends Controller
                 'errors' => $errors
             ], 403);
         }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required',
         ]);
-        $zone_id= json_decode($request->header('zoneId'), true);
-        $longitude= $request->header('longitude');
-        $latitude= $request->header('latitude');
 
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
-        $key = explode(' ', $request->name);
 
-        $foods = Food::active()->whereHas('restaurant', function($q)use($zone_id){
-            $q->whereIn('zone_id', $zone_id)->Weekday();
-        })
-        ->where(function ($q) use ($key) {
-            foreach ($key as $value) {
-                $q->orWhere('name', 'like', "%{$value}%");
-            }
-            $q->orWhereHas('translations',function($query)use($key){
-                $query->where(function($q)use($key){
-                    foreach ($key as $value) {
-                        $q->where('value', 'like', "%{$value}%");
-                    };
-                });
-            });
-            $q->orWhereHas('tags',function($query)use($key){
-                $query->where(function($q)use($key){
-                    foreach ($key as $value) {
-                        $q->where('tag', 'like', "%{$value}%");
-                    };
-                });
-            });
-        })
-        ->orderByRaw("FIELD(name, ?) DESC", [$request->name])
-        ->limit(50)
-        ->get(['restaurant_id','name','image']);
+        $zone_id = json_decode($request->header('zoneId'), true);
+        $longitude = $request->header('longitude');
+        $latitude = $request->header('latitude');
 
-        $restaurants = Restaurant::withOpen($longitude,$latitude)->whereIn('zone_id', $zone_id)->weekday()
-        ->where(function ($q) use ($key) {
-            foreach ($key as $value) {
-                $q->orWhere('name', 'like', "%{$value}%");
-            }
-            $q->orwhereHas('cuisine', function ($query) use ($key){
-                $query->where(function($q)use($key){
-                    foreach ($key as $value) {
-                        $q->where('name', 'like', "%{$value}%");
-                    };
-                });
-            });
-        })
-        ->active()
-        ->limit(50)
-        ->orderByRaw("FIELD(name, ?) DESC", [$request->name])
-        ->select(['restaurant_id','name','logo'])
-        ->get();
+        $key = $request->name;
+
+        // Search foods using Meilisearch
+        $foods = Food::search($key)
+            ->where('active', true)  // Now this filter will work
+            ->whereIn('zone_id', $zone_id)
+            ->take(50)
+            ->get(['restaurant_id', 'name', 'image']);
+
+        $restaurants = Restaurant::search($key)
+            ->where('active', true)  // This will also work
+            ->whereIn('zone_id', $zone_id)
+            ->where('weekday', true)
+            ->withOpen($longitude, $latitude)
+            ->take(50)
+            ->get(['restaurant_id', 'name', 'logo']);
 
         return [
             'foods' => $foods,
             'restaurants' => $restaurants
         ];
-
     }
+
+
 
     public function get_restaurant_popular_products(Request $request)
     {
@@ -492,9 +458,9 @@ class ProductController extends Controller
         $type = $request->query('type', 'all');
         $key = explode(' ', $request['name']);
 
-        $zone_id= json_decode($request->header('zoneId'), true);
-        $products = ProductLogic::get_restaurant_popular_products(zone_id:$zone_id,restaurant_id: $request->restaurant_id, type: $type,name:$key);
-        $products = Helpers::product_data_formatting(data:$products,multi_data: true, trans:false, local:app()->getLocale());
+        $zone_id = json_decode($request->header('zoneId'), true);
+        $products = ProductLogic::get_restaurant_popular_products(zone_id: $zone_id, restaurant_id: $request->restaurant_id, type: $type, name: $key);
+        $products = Helpers::product_data_formatting(data: $products, multi_data: true, trans: false, local: app()->getLocale());
         return response()->json($products, 200);
     }
 
@@ -519,11 +485,11 @@ class ProductController extends Controller
         $type = $request->query('type', 'all');
         $key = explode(' ', $request['name']);
 
-        $zone_id= json_decode($request->header('zoneId'), true);
-        $products = ProductLogic::recommended_most_reviewed(zone_id:$zone_id,restaurant_id: $request->restaurant_id, type: $type,name:$key);
+        $zone_id = json_decode($request->header('zoneId'), true);
+        $products = ProductLogic::recommended_most_reviewed(zone_id: $zone_id, restaurant_id: $request->restaurant_id, type: $type, name: $key);
 
 
-        $products = Helpers::product_data_formatting(data:$products,multi_data: true, trans:false, local:app()->getLocale());
+        $products = Helpers::product_data_formatting(data: $products, multi_data: true, trans: false, local: app()->getLocale());
         return response()->json($products, 200);
     }
 }

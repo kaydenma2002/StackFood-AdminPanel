@@ -182,9 +182,9 @@
                                             </span></label>
                                                 <select name="category_id" id="category-id" class="form-control js-select2-custom get-request">
                                                 @foreach ($categories as $category)
-                                                    <option value="{{ $category['id'] }}"
-                                                        {{ $category->id == $product_category[0]->id ? 'selected' : '' }}>
-                                                        {{ $category['name'] }}</option>
+                                                <option value="{{ $category->id }}" {{ $category->id == ($product_category[0]->id ?? null) ? 'selected' : '' }}>
+                                                    {{ $category['name'] }}
+                                                </option>
                                                 @endforeach
                                             </select>
                                     </div>
@@ -199,7 +199,7 @@
                                                     src="{{ dynamicAsset('/public/assets/admin/img/info-circle.svg') }}"
                                                     alt="{{ translate('messages.category_required_warning') }}"></span></label>
                                                     <select name="sub_category_id" id="sub-categories"
-                                                    data-id="{{ count($product_category) >= 2 ? $product_category[1]->id : '' }}"
+                                                   data-id="{{ $product_category[1]->id ?? '' }}"
                                                     class="form-control js-select2-custom">
                                                 </select>
                                     </div>
@@ -564,8 +564,9 @@
         $(document).ready(function() {
             setTimeout(function() {
                 let category = $("#category-id").val();
-                let sub_category = '{{ count($product_category) >= 2 ? $product_category[1]->id : '' }}';
-                let sub_sub_category = '{{ count($product_category) >= 3 ? $product_category[2]->id : '' }}';
+                let sub_category = '{{ isset($product_category) && count($product_category) >= 2 ? $product_category[1]->id : '' }}';
+                let sub_sub_category = '{{ isset($product_category) && count($product_category) >= 3 ? $product_category[2]->id : '' }}';
+
                 getRequest('{{ url('/') }}/admin/food/get-categories?parent_id=' + category +
                     '&sub_category=' + sub_category, 'sub-categories');
                 getRequest('{{ url('/') }}/admin/food/get-categories?parent_id=' + sub_category +
@@ -573,7 +574,7 @@
 
             }, 1000)
 
-            @if(count(json_decode($product['add_ons'], true))>0)
+            @if(is_array(json_decode($product['add_ons'])) && count(json_decode($product['add_ons'])) > 0)
             getRestaurantData('{{url('/')}}/admin/restaurant/get-addons?@foreach(json_decode($product['add_ons'], true) as $addon)data[]={{$addon}}& @endforeach restaurant_id=','{{$product['restaurant_id']}}','add_on');
             @else
             getRestaurantData('{{url('/')}}/admin/restaurant/get-addons?data[]=0&restaurant_id=','{{$product['restaurant_id']}}','add_on');
@@ -672,7 +673,7 @@
                                     <div>
                                         <label class="input-label text-capitalize d-flex align-items-center"><span class="line--limit-1">{{ translate('messages.selcetion_type') }} </span>
                                         </label>
-                                        <div class="resturant-type-group px-0">
+                                        <div class="restaurant-type-group px-0">
                                             <label class="form-check form--check mr-2 mr-md-4">
                                                 <input class="form-check-input show_min_max" data-count="`+count+`" type="radio" value="multi"
                                                 name="options[` + count + `][type]" id="type` + count +

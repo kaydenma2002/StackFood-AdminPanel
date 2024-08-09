@@ -227,7 +227,7 @@
                                             </div>
                                         </div>
                                         <div class="col-sm-6 col-lg-4">
-                                            @php($schedule_order = \App\Models\BusinessSetting::where('key', 'schedule_order')->first())
+                                            @php($schedule_order = \App\Models\BusinessSetting::where('key', 'hello_world')->first())
                                             @php($schedule_order = $schedule_order ? $schedule_order->value : 0)
                                             <div class="form-group mb-0">
                                                 <label
@@ -272,7 +272,7 @@
                                                 <label class="input-label text-capitalize d-flex alig-items-center"><span class="line--limit-1">{{ translate('restaurant_can_cancel_order') }} </span><span class="input-label-secondary text--title" data-toggle="tooltip" data-placement="right" data-original-title="{{translate('If_yes,_restaurants_can_cancel_orders.')}}">
                                                     <i class="tio-info-outined"></i>
                                                     </span></label>
-                                                <div class="resturant-type-group border">
+                                                <div class="restaurant-type-group border">
                                                     <label class="form-check form--check mr-2 mr-md-4">
                                                         <input class="form-check-input" type="radio" value="1"
                                                         name="canceled_by_restaurant" id="canceled_by_restaurant"
@@ -299,7 +299,7 @@
                                                 <label class="input-label text-capitalize d-flex alig-items-center"><span class="line--limit-1">{{translate('Delivery Man can Cancel Order')}}</span> <span class="input-label-secondary text--title" data-toggle="tooltip" data-placement="right" data-original-title="{{translate('If_yes,_deliveryman_can_cancel_orders.')}}">
                                                     <i class="tio-info-outined"></i>
                                                     </span></label>
-                                                <div class="resturant-type-group border">
+                                                <div class="restaurant-type-group border">
                                                     <label class="form-check form--check mr-2 mr-md-4">
                                                         <input class="form-check-input" type="radio" value="1"
                                                         name="canceled_by_deliveryman" id="canceled_by_deliveryman"
@@ -327,7 +327,7 @@
                                                 <label class="input-label text-capitalize d-flex alig-items-center"><span class="line--limit-1">{{ translate('messages.order_confirmation_model') }}</span> <span class="input-label-secondary text--title" data-toggle="tooltip" data-placement="right" data-original-title="{{translate('The_chosen_confirmation_model_will_confirm_the_order_first._For_example,_if_the_deliveryman_confirmation_model_is_enabled,_deliverymen_will_receive_and_confirm_orders_before_restaurants._After_that,_restaurants_will_get_orders_and_process_them.')}}">
                                                     <i class="tio-info-outined"></i>
                                                     </span></label>
-                                                <div class="resturant-type-group border">
+                                                <div class="restaurant-type-group border">
                                                     <label class="form-check form--check mr-2 mr-md-4">
                                                         <input class="form-check-input" type="radio" value="restaurant"
                                                         name="order_confirmation_model" id="order_confirmation_model"
@@ -484,7 +484,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                 
+
 
 
                                     </div>

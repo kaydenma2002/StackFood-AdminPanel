@@ -1637,7 +1637,7 @@
   'Bulk Export' => 'تصدير بالجملة',
   'business_management' => 'ادارة اعمال',
   'restaurant_config' => 'تكوين مطعم',
-  'My Resturant' => 'مطعم بلدي',
+  'My Restaurant' => 'مطعم بلدي',
   'my_shop' => 'متجري',
   'my_bank_info' => 'معلومات البنوك الخاصة بي',
   'my_wallet' => 'محفظتى',

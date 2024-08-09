@@ -34,30 +34,30 @@
                 <div class="row g-3">
                     <!-- Earnings (Monthly) Card Example -->
                     <div class="col-sm-6 col-md-4">
-                        <div class="resturant-card dashboard--card bg--2">
+                        <div class="restaurant-card dashboard--card bg--2">
                             <h4 class="title">{{$dm->orders->count()}}</h4>
                             <span class="subtitle">
                                 {{translate('messages.total_delivered_orders')}}
                             </span>
-                            <img class="resturant-icon" src="{{dynamicAsset('public/assets/admin/img/resturant-panel/deliveryman/delivered.png')}}" alt="dashboard">
+                            <img class="restaurant-icon" src="{{dynamicAsset('public/assets/admin/img/restaurant-panel/deliveryman/delivered.png')}}" alt="dashboard">
                         </div>
                     </div>
 
                     <!-- Collected Cash Card Example -->
                     <div class="col-sm-6 col-md-4">
-                        <div class="resturant-card dashboard--card bg--3">
+                        <div class="restaurant-card dashboard--card bg--3">
                             <h4 class="title">{{\App\CentralLogics\Helpers::format_currency($dm->wallet?$dm->wallet->collected_cash:0.0)}}</h4>
                             <span class="subtitle">{{translate('messages.cash_in_hand')}}</span>
-                            <img class="resturant-icon" src="{{dynamicAsset('public/assets/admin/img/resturant-panel/deliveryman/cash.png')}}" alt="dashboard">
+                            <img class="restaurant-icon" src="{{dynamicAsset('public/assets/admin/img/restaurant-panel/deliveryman/cash.png')}}" alt="dashboard">
                         </div>
                     </div>
 
                     <!-- Total Earning Card Example -->
                     <div class="col-sm-6 col-md-4">
-                        <div class="resturant-card dashboard--card bg--1">
+                        <div class="restaurant-card dashboard--card bg--1">
                             <h4 class="title">{{\App\CentralLogics\Helpers::format_currency($dm->wallet?$dm->wallet->total_earning:0.00)}}</h4>
                             <span class="subtitle">{{translate('messages.total_earning')}}</span>
-                            <img class="resturant-icon" src="{{dynamicAsset('public/assets/admin/img/resturant-panel/deliveryman/earning.png')}}" alt="dashboard">
+                            <img class="restaurant-icon" src="{{dynamicAsset('public/assets/admin/img/restaurant-panel/deliveryman/earning.png')}}" alt="dashboard">
                         </div>
                     </div>
 

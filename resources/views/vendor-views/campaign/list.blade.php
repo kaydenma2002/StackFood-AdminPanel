@@ -14,7 +14,7 @@
                 <div class="col-sm mb-2 mb-sm-0">
                     <h2 class="page-header-title text-capitalize">
                         <div class="card-header-icon d-inline-flex mr-2 img">
-                            <img src="{{ dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/campaign.png') }}"
+                            <img src="{{ dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/campaign.png') }}"
                                 alt="public">
                         </div>
                         <span>

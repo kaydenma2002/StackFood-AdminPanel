@@ -193,6 +193,7 @@ class FoodController extends Controller
 
     public function edit($id)
     {
+
         $product = Food::withoutGlobalScope(RestaurantScope::class)->withoutGlobalScope('translate')->with('translations')->findOrFail($id);
 
         if(!$product)
@@ -200,8 +201,11 @@ class FoodController extends Controller
             Toastr::error(translate('messages.food_not_found'));
             return back();
         }
+
         $product_category = json_decode($product->category_ids);
-        $categories = Category::where(['parent_id' => 0])->get();
+
+        $categories = Category::where('parent_id',0)->limit(100)->get();
+
         return view('admin-views.product.edit', compact('product', 'product_category', 'categories'));
     }
 

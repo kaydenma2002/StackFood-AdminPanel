@@ -71,21 +71,21 @@
             <div class="row g-3">
                 <!-- Panding Withdraw Card Example -->
                 <div class="col-sm-6">
-                    <div class="resturant-card  bg--2">
+                    <div class="restaurant-card  bg--2">
                         <h4 class="title">{{\App\CentralLogics\Helpers::format_currency($wallet->pending_withdraw)}}
                         </h4>
                         <span class="subtitle">{{translate('messages.pending_withdraw')}}</span>
-                        <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/pending.png')}}"
+                        <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/pending.png')}}"
                             alt="transactions">
                     </div>
                 </div>
 
                 <!-- Earnings (Monthly) Card Example -->
                 <div class="col-sm-6">
-                    <div class="resturant-card  bg--3">
+                    <div class="restaurant-card  bg--3">
                         <h4 class="title">{{\App\CentralLogics\Helpers::format_currency($wallet->total_withdrawn)}}</h4>
                         <span class="subtitle">{{translate('messages.total_withdrawn_amount')}}</span>
-                        <img class="resturant-icon"
+                        <img class="restaurant-icon"
                             src="{{dynamicAsset('/public/assets/admin/img/transactions/withdraw-amount.png')}}"
                             alt="transactions">
                     </div>
@@ -93,7 +93,7 @@
 
                 <!-- Collected Cash Card Example -->
                 <div class="col-sm-6">
-                    <div class="resturant-card  bg--5">
+                    <div class="restaurant-card  bg--5">
                         @if($wallet->balance ==  0)
                             <h4 class="title">{{\App\CentralLogics\Helpers::format_currency($wallet->balance)}}</h4>
                             <span class="subtitle">{{translate('messages.Balance')}}</span>
@@ -108,7 +108,7 @@
 
 
 
-                        <img class="resturant-icon"
+                        <img class="restaurant-icon"
                             src="{{dynamicAsset('/public/assets/admin/img/transactions/withdraw-balance.png')}}"
                             alt="transactions">
                     </div>
@@ -116,10 +116,10 @@
 
                 <!-- Pending Requests Card Example -->
                 <div class="col-sm-6">
-                    <div class="resturant-card  bg--1">
+                    <div class="restaurant-card  bg--1">
                         <h4 class="title">{{\App\CentralLogics\Helpers::format_currency($wallet->total_earning)}}</h4>
                         <span class="subtitle">{{translate('messages.total_earning')}}</span>
-                        <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/earning.png')}}"
+                        <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/transactions/earning.png')}}"
                             alt="transactions">
                     </div>
                 </div>
@@ -143,7 +143,7 @@
                     <div class="card-body">
                         <div class="row align-items-center g-3">
                             <div class="col-lg-6">
-                                <div class="resturant--info-address">
+                                <div class="restaurant--info-address">
                                     <div class="logo">
                                         <img class="onerror-image" data-onerror-image="{{dynamicAsset('public/assets/admin/img/100x100/restaurant-default-image.png')}}"
 
@@ -195,7 +195,7 @@
                         </h5>
                     </div>
                     <div class="card-body d-flex flex-column justify-content-center">
-                        <div class="resturant--info-address">
+                        <div class="restaurant--info-address">
                             <div class="avatar avatar-xxl avatar-circle avatar-border-lg">
                                 <img class="avatar-img onerror-image" data-onerror-image="{{dynamicAsset('public/assets/admin/img/160x160/img1.jpg')}}"
                                      src="{{ $restaurant?->vendor?->image_full_url ?? dynamicAsset('public/assets/admin/img/160x160/img1.jpg') }}"
@@ -276,7 +276,7 @@
                         </h5>
                     </div>
                     <div class="card-body d-flex flex-column justify-content-center">
-                        <div class="resturant--info-address">
+                        <div class="restaurant--info-address">
 
                             <ul class="address-info address-info-2 list-unstyled list-unstyled-py-3 text-dark">
 

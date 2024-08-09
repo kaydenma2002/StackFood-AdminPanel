@@ -17,13 +17,14 @@ class Cuisine extends Model
         'id' => 'integer',
         'status' => 'integer',
     ];
-
+    protected $with = ['storage'];
     protected $appends = ['image_full_url'];
 
     public function getImageFullUrlAttribute(){
         $value = $this->image;
         if (count($this->storage) > 0) {
             foreach ($this->storage as $storage) {
+
                 if ($storage['key'] == 'image') {
                     return Helpers::get_full_url('cuisine',$value,$storage['value']);
                 }
@@ -42,7 +43,8 @@ class Cuisine extends Model
     }
     public function restaurants()
     {
-        return $this->hasMany(Restaurant::class,'cuisine_id','id');
+        return $this->belongsToMany(Restaurant::class, 'cuisine_restaurant', 'cuisine_id', 'restaurant_id')
+        ->using('App\Models\Cuisine_restaurant');
     }
 
     protected static function boot()

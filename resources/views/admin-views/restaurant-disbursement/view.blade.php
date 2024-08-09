@@ -156,7 +156,7 @@
                                     <span class="font-weight-bold">{{$key+ $disbursement_restaurants->firstItem()}}</span>
                                 </td>
                                 <td>
-                                    <a href="{{ route('admin.restaurant.view', $restaurant->restaurant->restaurant_id) }}" alt="view restaurant"
+                                    <a href="{{ route('admin.restaurant.view', $restaurant->restaurant->id) }}" alt="view restaurant"
                                         class="table-rest-info">
                                         <div class="info">
                                             <span class="d-block text-body">

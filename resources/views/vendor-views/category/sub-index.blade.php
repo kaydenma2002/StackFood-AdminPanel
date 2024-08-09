@@ -9,7 +9,7 @@
                 <div class="search--button-wrapper justify-content-end">
                     <h2 class="page-header-title card-title text-capitalize">
                         <div class="card-header-icon d-inline-flex mr-2 img">
-                            <img src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/category.png')}}" alt="public">
+                            <img src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/category.png')}}" alt="public">
                         </div>
                         <span>
                             {{translate('messages.sub_category_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$categories->total()}}</span>

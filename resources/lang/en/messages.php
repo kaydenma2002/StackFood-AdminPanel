@@ -1637,7 +1637,7 @@
   'Bulk Export' => 'Bulk Export',
   'business_management' => 'Business management',
   'restaurant_config' => 'Restaurant config',
-  'My Resturant' => 'My Resturant',
+  'My Restaurant' => 'My Restaurant',
   'my_shop' => 'My shop',
   'my_bank_info' => 'My bank info',
   'my_wallet' => 'My wallet',
@@ -5750,4 +5750,5 @@
   'All Type' => 'All Type',
   'flash_sale_discount' => 'Flash sale discount',
   'CashBack' => 'CashBack',
+  'User_will_see_the_view_of_the_user_app_according_to_the_theme_selected_from_here' => 'User will see the view of the user app according to the theme selected from here',
 );

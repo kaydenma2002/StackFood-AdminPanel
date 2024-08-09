@@ -11,7 +11,7 @@
             <div class="d-flex flex-wrap justify-content-between align-items-center">
                 <h1 class="page-header-title my-1">
                     <div class="card-header-icon d-inline-flex mr-2 img">
-                        <img src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/dashboard.png')}}" alt="public">
+                        <img src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/dashboard.png')}}" alt="public">
                     </div>
                     <span>
                         {{translate('messages.dashboard')}}

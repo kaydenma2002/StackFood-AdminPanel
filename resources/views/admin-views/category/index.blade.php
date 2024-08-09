@@ -28,7 +28,7 @@
         </div>
         <!-- End Page Header -->
 
-        <div class="card resturant--cate-form">
+        <div class="card restaurant--cate-form">
             <div class="card-body">
                 <form action="{{isset($category)?route('admin.category.update',[$category['id']]):route('admin.category.store')}}" method="post" enctype="multipart/form-data">
                     @csrf

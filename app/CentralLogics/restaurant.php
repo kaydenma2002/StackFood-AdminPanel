@@ -348,11 +348,11 @@ class RestaurantLogic
             return $q->validate();
         }, 'campaigns', 'schedules', 'restaurant_sub'])->active()
             ->withcount('reviews_comments')
-            ->when(is_numeric($restaurant_id), function ($qurey) use ($restaurant_id) {
-                $qurey->where('id', $restaurant_id);
+            ->when(is_numeric($restaurant_id), function ($query) use ($restaurant_id) {
+                $query->where('restaurant_id', $restaurant_id);
             })
-            ->when(!is_numeric($restaurant_id), function ($qurey) use ($restaurant_id) {
-                $qurey->where('slug', $restaurant_id);
+            ->when(!is_numeric($restaurant_id), function ($query) use ($restaurant_id) {
+                $query->where('slug', $restaurant_id);
             })
             ->first();
     }
@@ -561,7 +561,7 @@ class RestaurantLogic
         $storage = [];
         foreach ($restaurants as $item) {
             $storage[] = [
-                'id' => $item->restaurant[0]->restaurant_id ?? null,
+                'id' => $item->restaurants[0]->id ?? null,
                 'ownerID' => $item->id ?? null,
                 'ownerFirstName' => $item->f_name ?? null,
                 'ownerLastName' => $item->l_name ?? null,

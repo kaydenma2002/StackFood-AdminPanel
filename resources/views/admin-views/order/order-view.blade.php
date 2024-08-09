@@ -1437,7 +1437,7 @@ $max_processing_time = $order->restaurant?explode('-', $order->restaurant['deliv
                                             <span>{{ translate('messages.restaurant_info') }}</span>
                                         </h5>
                                         <!-- End Header -->
-                                        <a class="media align-items-center deco-none resturant--information-single"
+                                        <a class="media align-items-center deco-none restaurant--information-single"
                                             href="{{ route('admin.restaurant.view', [$order->restaurant['id']]) }}">
                                             <div class="avatar avatar-circle">
                                                     <img class="avatar-img w-75px"

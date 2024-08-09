@@ -230,7 +230,7 @@
                             </td>
                             @if($tab=='restaurant')
                             <td>
-                                <a href="{{ route('admin.restaurant.view', $disbursement->restaurant->restaurant_id) }}" alt="view restaurant"
+                                <a href="{{ route('admin.restaurant.view', $disbursement->restaurant->id) }}" alt="view restaurant"
                                    class="table-rest-info">
                                     <div class="info">
                                             <span class="d-block text-body">

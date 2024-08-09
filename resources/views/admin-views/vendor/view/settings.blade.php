@@ -478,7 +478,7 @@
                                 </span>
                                 </label>
                                 @php($restaurant_type = \App\Models\Restaurant::where(['id'=>$restaurant->restaurant_id])->select('veg','non_veg')->first())
-                                <div class="resturant-type-group border">
+                                <div class="restaurant-type-group border">
                                     <label class="form-check form--check mr-2 mr-md-4">
                                         @php($checked = ($restaurant_type->veg == 1 && $restaurant_type->non_veg == 0) ? 'checked' : '')
                                         <input class="form-check-input" type="radio" name="menu" id="check-veg"

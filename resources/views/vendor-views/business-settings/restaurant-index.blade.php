@@ -14,7 +14,7 @@
         <div class="page-header">
             <h2 class="page-header-title text-capitalize">
                 <div class="card-header-icon d-inline-flex mr-2 img">
-                    <img src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/resturant.png')}}" alt="public">
+                    <img src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/restaurant.png')}}" alt="public">
                 </div>
                 <span>
                     {{translate('Restaurant Setup')}}

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\CentralLogics\RestaurantLogic;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
 
 class RestaurantController extends Controller
 {
@@ -247,25 +248,31 @@ class RestaurantController extends Controller
             ], 403);
         }
 
-        $longitude= $request->header('longitude') ?? 0;
-        $latitude= $request->header('latitude') ?? 0;
-        // $user_id = $request->user ? $request->user->id : $request['guest_id'];
-        $zone_id= json_decode($request->header('zoneId'), true);
-        $data = Restaurant::withOpen($longitude,$latitude)
+        $longitude = $request->header('longitude') ?? 0;
+        $latitude = $request->header('latitude') ?? 0;
+        $zone_id = json_decode($request->header('zoneId'), true);
 
-        ->withcount('foods')
-        ->with(['foods_for_reorder'])
-        ->Active()
-        ->whereIn('zone_id', $zone_id)
-        ->orderBy('open', 'desc')
-        ->orderBy('distance', 'asc')
-        ->inRandomOrder()->limit(20)
-        ->get()
-		->map(function ($data) {
-			$data->foods = $data->foods_for_reorder->take(5);
-            unset($data->foods_for_reorder);
-			return $data;
-		});
+        // Generate a unique cache key
+        $cacheKey = 'recommended_restaurants_' . implode('_', $zone_id) . "_{$longitude}_{$latitude}";
+        $cacheDuration = 60; // Cache duration in minutes
+
+        // Cache the result for 60 minutes
+        $data = Cache::remember($cacheKey, $cacheDuration, function () use ($longitude, $latitude, $zone_id) {
+            return Restaurant::withOpen($longitude, $latitude)
+                ->withCount('foods')
+                ->with(['foods_for_reorder'])
+                ->active()
+                ->whereIn('zone_id', $zone_id)
+                ->orderBy('open', 'desc')
+                ->orderBy('distance', 'asc')
+                ->inRandomOrder()->limit(20)
+                ->get()
+                ->map(function ($data) {
+                    $data->foods = $data->foods_for_reorder->take(5);
+                    unset($data->foods_for_reorder);
+                    return $data;
+                });
+        });
 
         return response()->json(Helpers::restaurant_data_formatting($data, true), 200);
     }

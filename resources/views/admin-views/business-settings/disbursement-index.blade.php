@@ -61,7 +61,7 @@
                                                     src="{{ dynamicAsset('/public/assets/admin/img/info-circle.svg') }}"
                                                     alt="{{ translate('messages.Disbursement_Request_Type') }}"></span>
                                         </label>
-                                        <div class="resturant-type-group border">
+                                        <div class="restaurant-type-group border">
                                             <label class="form-check form--check mr-2 mr-md-4">
                                                 <input class="form-check-input" type="radio" value="manual"
                                                        name="disbursement_type" id="disbursement_type"

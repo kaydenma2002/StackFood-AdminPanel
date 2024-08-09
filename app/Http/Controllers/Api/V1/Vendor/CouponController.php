@@ -52,7 +52,7 @@ class CouponController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
-        $restaurant_id = $request->vendor->restaurant[0]->restaurant_id;
+        $restaurant_id = $request->vendor->restaurants[0]->id;
 
 
         $data = json_decode($request->translations, true);

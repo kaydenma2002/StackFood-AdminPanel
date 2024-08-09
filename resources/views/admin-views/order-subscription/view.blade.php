@@ -311,7 +311,7 @@
                                         <span>{{ translate('Restaurant_info') }}</span>
                                     </h5>
                                     <!-- End Header -->
-                                    <a class="media align-items-center deco-none resturant--information-single" href="{{route('admin.restaurant.view', $subscription->restaurant_id)}}">
+                                    <a class="media align-items-center deco-none restaurant--information-single" href="{{route('admin.restaurant.view', $subscription->restaurant_id)}}">
                                         <div class="avatar avatar-circle">
                                                 <img class="avatar-img w-75px" src="{{ $subscription?->restaurant?->logo_full_url ?? dynamicAsset('public/assets/admin/img/100x100/food-default-image.png') }}" alt="image">
 

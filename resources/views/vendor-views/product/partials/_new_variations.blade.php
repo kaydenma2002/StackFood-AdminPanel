@@ -31,7 +31,7 @@
                     <label class="input-label text-capitalize d-flex alig-items-center"><span
                                 class="line--limit-1">{{ translate('messages.selcetion_type') }} </span>
                     </label>
-                    <div class="resturant-type-group border">
+                    <div class="restaurant-type-group border">
                         <label class="form-check form--check mr-2 mr-md-4">
                             <input class="form-check-input show_min_max" type="radio" value="multi"
                                    name="options[{{ $key }}][type]" id="type{{ $key }}"

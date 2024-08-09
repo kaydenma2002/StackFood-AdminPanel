@@ -16,6 +16,7 @@ use App\Models\RestaurantSchedule;
 use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
 
 class BusinessSettingsController extends Controller
 {
@@ -24,12 +25,24 @@ class BusinessSettingsController extends Controller
 
     public function restaurant_index()
     {
-        $restaurant =  Restaurant::withoutGlobalScope('translate')->with('translations')->findOrFail(Helpers::get_restaurant_id());
-        $cuisineNames = Cuisine::pluck('name')->toArray();
-        $categoryNames = Category::pluck('name')->toArray();
-        $combinedNames = array_merge($cuisineNames, $categoryNames);
-        $combinedNames = '[' . implode(', ', array_map(fn($name) => "'$name'", $combinedNames)) . ']';
-        return view('vendor-views.business-settings.restaurant-index', compact('restaurant','combinedNames'));
+        $restaurant = Restaurant::withoutGlobalScope('translate')
+    ->with('translations')
+    ->findOrFail(Helpers::get_restaurant_id());
+
+// Cache cuisine and category names to improve performance
+$cuisineNames = Cache::remember('cuisine_names', 60 * 60, function() {
+    return Cuisine::limit(10)->pluck('name')->toArray();
+});
+
+$categoryNames = Cache::remember('category_names', 60 * 60, function() {
+    return Category::limit(10)->pluck('name')->toArray();
+});
+
+$combinedNames = array_merge($cuisineNames, $categoryNames);
+$combinedNames = '[' . implode(', ', array_map(fn($name) => "'$name'", $combinedNames)) . ']';
+
+
+return view('vendor-views.business-settings.restaurant-index', compact('restaurant', 'combinedNames'));
     }
 
     public function notification_index()

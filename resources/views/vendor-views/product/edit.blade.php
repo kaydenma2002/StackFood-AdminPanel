@@ -478,7 +478,7 @@
                                     <div>
                                         <label class="input-label text-capitalize d-flex align-items-center"><span class="line--limit-1">{{ translate('messages.selcetion_type') }} </span>
                                         </label>
-                                        <div class="resturant-type-group px-0">
+                                        <div class="restaurant-type-group px-0">
                                             <label class="form-check form--check mr-2 mr-md-4">
                                                 <input class="form-check-input show_min_max" data-count="`+count+`" type="radio" value="multi"
                                                 name="options[` + count + `][type]" id="type` + count +

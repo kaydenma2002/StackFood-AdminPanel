@@ -263,7 +263,9 @@ class VendorController extends Controller
             Toastr::warning(translate('messages.you_can_not_edit_this_restaurant_please_add_a_new_restaurant_to_edit'));
             return back();
         }
+
         $restaurant = Restaurant::withoutGlobalScope('translate')->with('translations')->find($id);
+
         return view('admin-views.vendor.edit', compact('restaurant'));
     }
 
@@ -277,10 +279,10 @@ class VendorController extends Controller
             'email' => 'required|unique:vendors,email,' . $restaurant?->vendor?->id,
             'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:9|max:20|unique:vendors,phone,' . $restaurant?->vendor?->id,
             'zone_id' => 'required',
-            'latitude' => 'required|min:-90|max:90',
-            'longitude' => 'required|min:-180|max:180',
+            'latitude' => 'nullable|numeric|min:-90|max:90',
+            'longitude' => 'nullable|numeric|min:-180|max:180',
             'tax' => 'required',
-            'password' => ['nullable', Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
+            'password' => ['nullable', Password::min(8)],
             'minimum_delivery_time' => 'required',
             'maximum_delivery_time' => 'required|gt:minimum_delivery_time',
             'logo' => 'nullable|max:2048',
@@ -431,7 +433,9 @@ class VendorController extends Controller
                 }
             }
         }
-        $restaurant?->cuisine()?->sync($cuisine_ids);
+
+
+        $restaurant?->cuisine()->sync($cuisine_ids);
         if ($vendor?->userinfo) {
             $userinfo = $vendor->userinfo;
             $userinfo->f_name = $request->name;
@@ -643,45 +647,55 @@ class VendorController extends Controller
     public function list(Request $request)
     {
 
-        $key = explode(' ', $request['search']);
+        $searchTerm = $request['search'];  // Use the entire search term
+
         $zone_id = $request->query('zone_id', 'all');
         $cuisine_id = $request->query('cuisine_id', 'all');
         $type = $request->query('type', 'all');
         $typ = $request->query('restaurant_model', '');
 
-
-        $restaurants = Restaurant::when(is_numeric($zone_id), function ($query) use ($zone_id) {
-            return $query->where('zone_id', $zone_id);
-        })
-            ->with(['zone', 'cuisine', 'vendor'])
-            ->withSum('reviews', 'rating')
-            ->withCount('reviews')
-            ->whereHas('vendor', function ($q) {
-                $q->where('status', 1);
+        $restaurants = Restaurant::select('restaurants.*')
+            ->selectSub(function ($query) {
+                $query->selectRaw('SUM(reviews.rating)')
+                    ->from('reviews')
+                    ->join('food', 'food.id', '=', 'reviews.food_id')
+                    ->whereColumn('restaurants.restaurant_id', 'food.restaurant_id');
+            }, 'reviews_sum_rating')
+            ->selectSub(function ($query) {
+                $query->selectRaw('COUNT(*)')
+                    ->from('reviews')
+                    ->join('food', 'food.id', '=', 'reviews.food_id')
+                    ->whereColumn('restaurants.restaurant_id', 'food.restaurant_id');
+            }, 'reviews_count')
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('vendors')
+                    ->whereColumn('restaurants.vendor_id', 'vendors.id')
+                    ->where('vendors.status', 1);
             })
-            ->when(isset($key), function ($q) use ($key) {
-                $q->where(function ($query) use ($key) {
-                    $query->orWhereHas('vendor', function ($q) use ($key) {
-                        foreach ($key as $value) {
-                            $q->orWhere('f_name', 'like', "%{$value}%")
-                                ->orWhere('l_name', 'like', "%{$value}%")
-                                ->orWhere('email', 'like', "%{$value}%")
-                                ->orWhere('phone', 'like', "%{$value}%");
-                        }
-                    })
-                        ->where(function ($q) use ($key) {
-                            foreach ($key as $value) {
-                                $q->orWhere('name', 'like', "%{$value}%")
-                                    ->orWhere('email', 'like', "%{$value}%")
-                                    ->orWhere('phone', 'like', "%{$value}%");
-                            }
+            ->where(function ($query) use ($searchTerm) {
+                $query->whereExists(function ($query) use ($searchTerm) {
+                    $query->select(DB::raw(1))
+                        ->from('vendors')
+                        ->whereColumn('restaurants.vendor_id', 'vendors.id')
+                        ->where(function ($query) use ($searchTerm) {
+                            $query->orWhere('vendors.f_name', 'like', "%{$searchTerm}%")
+                                  ->orWhere('vendors.l_name', 'like', "%{$searchTerm}%")
+                                  ->orWhere('vendors.email', 'like', "%{$searchTerm}%")
+                                  ->orWhere('vendors.phone', 'like', "%{$searchTerm}%");
                         });
+                })
+                ->orWhere(function ($query) use ($searchTerm) {
+                    $query->orWhere('restaurants.name', 'like', "%{$searchTerm}%")
+                          ->orWhere('restaurants.email', 'like', "%{$searchTerm}%")
+                          ->orWhere('restaurants.phone', 'like', "%{$searchTerm}%");
                 });
             })
-            ->cuisine($cuisine_id)
-            ->type($type)->RestaurantModel($typ)->latest()->paginate(config('default_pagination'));
+            ->orderBy('restaurants.created_at', 'desc')
+            ->paginate(config('default_pagination'));
 
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+
         return view('admin-views.vendor.list', compact('restaurants', 'zone', 'type', 'typ', 'cuisine_id'));
     }
 

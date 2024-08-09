@@ -1637,7 +1637,7 @@ return array (
   'Bulk Export' => 'বাল্ক এক্সপোর্ট',
   'business_management' => 'বিজনেস ব্যবস্থাপনা',
   'restaurant_config' => 'রেস্টুরেন্ট কনফিগারেশন',
-  'My Resturant' => 'আমার রেস্টুরেন্ট',
+  'My Restaurant' => 'আমার রেস্টুরেন্ট',
   'my_shop' => 'আমার শপ',
   'my_bank_info' => 'আমার ব্যাংক ইনফো',
   'my_wallet' => 'আমার ওয়ালেট',

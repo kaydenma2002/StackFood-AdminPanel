@@ -52,33 +52,33 @@
                 <!-- Resturent Card Wrapper -->
                 <div id="all_data" class="row g-3 mb-3 desc">
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--1">
+                        <div class="restaurant-card bg--1">
                             <h4 class="title">{{$total_on_package}}</h4>
                             <span class="subtitle">{{translate('messages.Total_Subscribed_users')}} </span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/1.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/1.svg')}}" alt="restaurant">
                         </div>
                     </div>
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--2">
+                        <div class="restaurant-card bg--2">
 
                             <h4 class="title">{{$active}}</h4>
                             <span class="subtitle">{{translate('messages.Active_Subscription')}}</span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/2.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/2.svg')}}" alt="restaurant">
                         </div>
                     </div>
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--3">
+                        <div class="restaurant-card bg--3">
 
                             <h4 class="title">{{$deactive}}</h4>
                             <span class="subtitle"> {{ translate('messages.Expired_Subscription')}}</span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/3.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/3.svg')}}" alt="restaurant">
                         </div>
                     </div>
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--4">
+                        <div class="restaurant-card bg--4">
                             <h4 class="title">{{$expire_soon}}</h4>
                             <span class="subtitle">{{translate('Expiring Soon')}}</span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/4.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/4.svg')}}" alt="restaurant">
                         </div>
                     </div>
 
@@ -148,33 +148,33 @@
                 <!-- Resturent Card Wrapper -->
                 <div  id="this_month" class="row g-3 mb-3 desc" style="display: none;">
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--1">
+                        <div class="restaurant-card bg--1">
                             <h4 class="title">{{$this_month_total_on_package}}</h4>
                             <span class="subtitle">{{translate('messages.Total_Subscribed_users')}} </span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/1.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/1.svg')}}" alt="restaurant">
                         </div>
                     </div>
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--2">
+                        <div class="restaurant-card bg--2">
 
                             <h4 class="title">{{$this_month_active}}</h4>
                             <span class="subtitle">{{translate('messages.Active_Subscription')}}</span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/2.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/2.svg')}}" alt="restaurant">
                         </div>
                     </div>
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--3">
+                        <div class="restaurant-card bg--3">
 
                             <h4 class="title">{{$this_month_deactive}}</h4>
                             <span class="subtitle"> {{ translate('messages.Expired_Subscription')}}</span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/3.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/3.svg')}}" alt="restaurant">
                         </div>
                     </div>
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--4">
+                        <div class="restaurant-card bg--4">
                             <h4 class="title">{{$expire_soon}}</h4>
                             <span class="subtitle">{{translate('Expiring Soon')}}</span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/4.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/4.svg')}}" alt="restaurant">
                         </div>
                     </div>
 
@@ -245,33 +245,33 @@
                 <!-- Resturent Card Wrapper -->
                 <div id="this_year" class="row g-3 mb-3 desc "  style="display: none;">
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--1">
+                        <div class="restaurant-card bg--1">
                             <h4 class="title">{{$this_year_total_on_package}}</h4>
                             <span class="subtitle">{{translate('messages.Total_Subscribed_users')}} </span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/1.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/1.svg')}}" alt="restaurant">
                         </div>
                     </div>
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--2">
+                        <div class="restaurant-card bg--2">
 
                             <h4 class="title">{{$this_year_active}}</h4>
                             <span class="subtitle">{{translate('messages.Active_Subscription')}}</span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/2.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/2.svg')}}" alt="restaurant">
                         </div>
                     </div>
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--3">
+                        <div class="restaurant-card bg--3">
 
                             <h4 class="title">{{$this_year_deactive}}</h4>
                             <span class="subtitle"> {{ translate('messages.Expired_Subscription')}}</span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/3.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/3.svg')}}" alt="restaurant">
                         </div>
                     </div>
                     <div class="col-xl-3 col-sm-6">
-                        <div class="resturant-card bg--4">
+                        <div class="restaurant-card bg--4">
                             <h4 class="title">{{$expire_soon}}</h4>
                             <span class="subtitle">{{translate('Expiring Soon')}}</span>
-                            <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/4.svg')}}" alt="resturant">
+                            <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/subscription-list/4.svg')}}" alt="restaurant">
                         </div>
                     </div>
 

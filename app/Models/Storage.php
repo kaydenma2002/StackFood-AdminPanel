@@ -9,12 +9,13 @@ class Storage extends Model
 {
 
     use HasFactory;
-    public $with= ['data'];
+
     public $timestamps = false;
 
     protected $fillable = [
         'data_type',
         'data_id',
+        'key',
         'value'
     ];
 

@@ -1,3 +1,7 @@
+<?php
+use Illuminate\Support\Facades\Cache;
+
+?>
 <!DOCTYPE html>
 <html>
 
@@ -95,7 +99,11 @@
                     {{ translate('Thanks_&_Regards') }},</span>
 
 
-                    @php($business_name = \App\Models\BusinessSetting::where(['key' => 'business_name'])->first()?->value)
+                    @php
+                    $business_name = Cache::remember('business_name', 60, function () {
+                        return \App\Models\BusinessSetting::where(['key' => 'business_name'])->first()?->value;
+                    });
+                    @endphp
                 <span class="d-block" style="margin-bottom:20px">{{ $business_name }}</span>
                 @php($restaurant_logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first())
 

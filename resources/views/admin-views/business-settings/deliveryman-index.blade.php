@@ -180,7 +180,7 @@
                                                 src="{{ dynamicAsset('/public/assets/admin/img/info-circle.svg') }}"
                                                 alt="{{ translate('messages.dm_cancel_order_hint') }}"></span>
                                             </label>
-                                        <div class="resturant-type-group border">
+                                        <div class="restaurant-type-group border">
                                             <label class="form-check form--check mr-2 mr-md-4">
                                                 <input class="form-check-input" type="radio" value="1"
                                                     name="canceled_by_deliveryman" id="canceled_by_deliveryman"

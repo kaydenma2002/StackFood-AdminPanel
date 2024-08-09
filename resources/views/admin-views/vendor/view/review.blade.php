@@ -40,8 +40,8 @@
     </div>
         <!-- End Page Header -->
     <!-- Reviews -->
-    <div class="resturant-review-top" id="restaurant_details">
-        <div class="resturant-review-left mb-3">
+    <div class="restaurant-review-top" id="restaurant_details">
+        <div class="restaurant-review-left mb-3">
             @php($reviews = $restaurant->reviews()->with('food',function($query){
                 $query->withoutGlobalScope(\App\Scopes\RestaurantScope::class);
             })->get())
@@ -158,7 +158,7 @@
                 <span>{{$total_reviews}} {{translate('messages.reviews')}}</span>
             </div>
         </div>
-        <div class="resturant-review-right">
+        <div class="restaurant-review-right">
             <ul class="list-unstyled list-unstyled-py-2 mb-0">
             @php($ratings = $restaurant->rating)
             @php($five = $ratings[0])

@@ -94,12 +94,12 @@
             <!--Debit earned-->
             <div class="col-sm-4">
                 <!-- Card -->
-                <div class="resturant-card dashboard--card bg--2">
+                <div class="restaurant-card dashboard--card bg--2">
                     <h4 class="title">{{translate('messages.debit')}}</h4>
                     <span class="subtitle">
                         {{\App\CentralLogics\Helpers::format_currency($debit)}}
                     </span>
-                    <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/3.png')}}" alt="dashboard">
+                    <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/3.png')}}" alt="dashboard">
                 </div>
                 <!-- End Card -->
             </div>
@@ -107,12 +107,12 @@
             <!--credit earned-->
             <div class="col-sm-4">
                 <!-- Card -->
-                <div class="resturant-card dashboard--card bg--3">
+                <div class="restaurant-card dashboard--card bg--3">
                     <h4 class="title">{{translate('messages.credit')}}</h4>
                     <span class="subtitle">
                         {{\App\CentralLogics\Helpers::format_currency($credit)}}
                     </span>
-                    <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/4.png')}}" alt="dashboard">
+                    <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/4.png')}}" alt="dashboard">
                 </div>
                 <!-- End Card -->
             </div>
@@ -120,12 +120,12 @@
             <!--balance earned-->
             <div class="col-sm-4">
                 <!-- Card -->
-                <div class="resturant-card dashboard--card bg--1">
+                <div class="restaurant-card dashboard--card bg--1">
                     <h4 class="title">{{translate('messages.balance')}}</h4>
                     <span class="subtitle">
                         {{\App\CentralLogics\Helpers::format_currency($balance)}}
                     </span>
-                    <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/1.png')}}" alt="dashboard">
+                    <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/1.png')}}" alt="dashboard">
                 </div>
                 <!-- End Card -->
             </div>

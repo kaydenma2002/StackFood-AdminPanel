@@ -16,6 +16,7 @@ class DashboardController extends Controller
 {
     public function dashboard(Request $request)
     {
+
         $params = [
             'statistics_type' => $request['statistics_type'] ?? 'overall'
         ];

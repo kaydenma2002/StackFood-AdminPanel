@@ -20,10 +20,6 @@ class BusinessSetting extends Model
         return $this->morphMany(Storage::class, 'data');
     }
 
-    protected static function booted(): void
-    {
-        // No need to add a global scope for storage if it's already in $with
-    }
 
     protected static function boot()
     {

@@ -16,23 +16,23 @@
                 <h2 class="page-header-title align-items-center text-capitalize py-2 mr-2">
                     <div class="card-header-icon d-inline-flex mr-2 img">
                         @if(str_replace('_',' ',$status) == 'All')
-                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/order.png')}}" alt="public">
+                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/order.png')}}" alt="public">
                         @elseif(str_replace('_',' ',$status) == 'Pending')
-                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/pending.png')}}" alt="public">
+                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/pending.png')}}" alt="public">
                         @elseif(str_replace('_',' ',$status) == 'Confirmed')
-                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/confirm.png')}}" alt="public">
+                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/confirm.png')}}" alt="public">
                         @elseif(str_replace('_',' ',$status) == 'Cooking')
-                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/cooking.png')}}" alt="public">
+                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/cooking.png')}}" alt="public">
                         @elseif(str_replace('_',' ',$status) == 'Ready for delivery')
-                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/ready.png')}}" alt="public">
+                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/ready.png')}}" alt="public">
                         @elseif(str_replace('_',' ',$status) == 'Food on the way')
-                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/ready.png')}}" alt="public">
+                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/ready.png')}}" alt="public">
                         @elseif(str_replace('_',' ',$status) == 'Delivered')
-                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/ready.png')}}" alt="public">
+                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/ready.png')}}" alt="public">
                         @elseif(str_replace('_',' ',$status) == 'Refunded')
-                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/order.png')}}" alt="public">
+                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/order.png')}}" alt="public">
                         @elseif(str_replace('_',' ',$status) == 'Scheduled')
-                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/resturant-panel/page-title/order.png')}}" alt="public">
+                            <img class="mw-24px" src="{{dynamicAsset('/public/assets/admin/img/restaurant-panel/page-title/order.png')}}" alt="public">
                         @endif
                     </div>
                     <span>

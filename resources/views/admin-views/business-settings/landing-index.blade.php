@@ -90,7 +90,7 @@ $config = \App\CentralLogics\Helpers::get_business_settings('landing_page');
                         <i class="tio-info-outined" data-toggle="tooltip" title="{{ translate('You_can_upload_your_landing_page_either_using_URL_or_File_Upload') }}"></i>
                     </label>
                         <div class="mb-30 ">
-                            <div class="resturant-type-group border d-inline-flex">
+                            <div class="restaurant-type-group border d-inline-flex">
                                 <label class="form-check form--check mr-2 mr-md-4">
                                     <input class="form-check-input" type="radio" value="url" name="landing_integration_via" {{  $landing_integration_type == 'url'?'checked':''  }}>
                                     <span class="form-check-label">

@@ -4,16 +4,16 @@ namespace App\Models;
 
 use App\CentralLogics\Helpers;
 use Carbon\Carbon;
-use App\Models\Restaurant;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class Vendor extends Authenticatable
 {
-    use Notifiable;
-    use HasFactory;
+    use Notifiable, HasFactory;
+    protected $with = ['storage'];
     protected $fillable = ['remember_token'];
     protected $casts = [
         'created_at' => 'datetime',
@@ -27,19 +27,36 @@ class Vendor extends Authenticatable
     ];
 
     protected $appends = ['image_full_url'];
-    public function getImageFullUrlAttribute(){
+    protected $storageCache = null;
+
+    // Accessor for the full URL of the vendor's image
+    public function getImageFullUrlAttribute()
+    {
+        if ($this->storageCache === null) {
+            $this->storageCache = $this->getCachedStorage();
+        }
+
         $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('vendor',$value,$storage['value']);
-                }
+        $storage = $this->storageCache;
+
+        foreach ($storage as $item) {
+            if ($item['key'] == 'image') {
+                return Helpers::get_full_url('vendor', $value, $item['value']);
             }
         }
 
-        return Helpers::get_full_url('vendor',$value,'public');
+        return Helpers::get_full_url('vendor', $value, 'public');
     }
 
+    // Caches the storage data for the vendor
+    protected function getCachedStorage()
+    {
+        return Cache::remember("vendor_{$this->id}_storage", 60, function () {
+            return $this->storage;
+        });
+    }
+
+    // Relationships
     public function order_transaction()
     {
         return $this->hasMany(OrderTransaction::class);
@@ -47,7 +64,7 @@ class Vendor extends Authenticatable
 
     public function todays_earning()
     {
-        return $this->hasMany(OrderTransaction::class)->whereDate('created_at',now());
+        return $this->hasMany(OrderTransaction::class)->whereDate('created_at', now());
     }
 
     public function this_week_earning()
@@ -62,7 +79,7 @@ class Vendor extends Authenticatable
 
     public function todaysorders()
     {
-        return $this->hasManyThrough(Order::class, Restaurant::class)->whereDate('orders.created_at',now());
+        return $this->hasManyThrough(Order::class, Restaurant::class)->whereDate('orders.created_at', now());
     }
 
     public function this_week_orders()
@@ -77,7 +94,7 @@ class Vendor extends Authenticatable
 
     public function userinfo()
     {
-        return $this->hasOne(UserInfo::class,'vendor_id', 'id');
+        return $this->hasOne(UserInfo::class, 'vendor_id', 'id');
     }
 
     public function orders()
@@ -87,12 +104,14 @@ class Vendor extends Authenticatable
 
     public function restaurants()
     {
-        return $this->hasMany(Restaurant::class,'vendor_id','id');
+        return $this->hasMany(Restaurant::class, 'vendor_id', 'id');
     }
+
     public function withdrawrequests()
     {
         return $this->hasMany(WithdrawRequest::class);
     }
+
     public function wallet()
     {
         return $this->hasOne(RestaurantWallet::class);
@@ -103,32 +122,27 @@ class Vendor extends Authenticatable
         return $this->morphMany(Storage::class, 'data');
     }
 
-    protected static function booted()
-    {
-        // static::addGlobalScope('storage', function ($builder) {
-        //     $builder->with('storage');
-        // });
-
-    }
+    // Model boot method to handle saving events
     protected static function boot()
     {
         parent::boot();
         static::saved(function ($model) {
-            if($model->isDirty('image')){
+            if ($model->isDirty('image')) {
                 $value = Helpers::getDisk();
 
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+                DB::table('storages')->updateOrInsert(
+                    [
+                        'data_type' => get_class($model),
+                        'data_id' => $model->id,
+                        'key' => 'image',
+                    ],
+                    [
+                        'value' => $value,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]
+                );
             }
         });
-
     }
-
 }

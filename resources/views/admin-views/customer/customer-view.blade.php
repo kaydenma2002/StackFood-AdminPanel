@@ -36,8 +36,8 @@
         <div class="row mb-2 g-2">
             <!-- Collected Cash Card Example -->
             <div class="col-lg-6 col-md-6 col-sm-6">
-                <div class="resturant-card bg--2">
-                    <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/1.png')}}" alt="dashboard">
+                <div class="restaurant-card bg--2">
+                    <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/1.png')}}" alt="dashboard">
                     <div class="for-card-text font-weight-bold  text-uppercase mb-1">{{translate('messages.wallet_balance')}}</div>
                     <div class="for-card-count">{{$customer->wallet_balance??0}}</div>
                 </div>
@@ -45,8 +45,8 @@
 
             <!-- Pending Requests Card Example -->
             <div class="col-lg-6 col-md-6 col-sm-6">
-                <div class="resturant-card bg--3">
-                    <img class="resturant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/3.png')}}" alt="dashboard">
+                <div class="restaurant-card bg--3">
+                    <img class="restaurant-icon" src="{{dynamicAsset('/public/assets/admin/img/dashboard/3.png')}}" alt="dashboard">
                     <div class="for-card-text font-weight-bold  text-uppercase mb-1">{{translate('messages.loyalty_point_balance')}}</div>
                     <div class="for-card-count">{{$customer->loyalty_point??0}}</div>
                 </div>

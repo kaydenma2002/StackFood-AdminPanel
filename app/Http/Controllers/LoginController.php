@@ -97,7 +97,7 @@ class LoginController extends Controller
         return view('auth.login', compact('custome_recaptcha','email','password','role','site_direction','locale'));
     }
 
-    public function login_attemp($role,$email ,$password, $remember = false){
+    public function login_attempt($role,$email ,$password, $remember = false){
         $auth= ($role == 'admin_employee' ? 'admin' :$role);
         if (auth($auth)->attempt(['email' => $email, 'password' => $password], $remember)) {
 
@@ -198,7 +198,7 @@ class LoginController extends Controller
             }
         }
 
-    $data=$this->login_attemp($request->role,$request->email ,$request->password, $request->remember);
+    $data=$this->login_attempt($request->role,$request->email ,$request->password, $request->remember);
 
     if($data == 'admin' ||$data == 'vendor' ){
         return redirect()->route($data.'.dashboard');

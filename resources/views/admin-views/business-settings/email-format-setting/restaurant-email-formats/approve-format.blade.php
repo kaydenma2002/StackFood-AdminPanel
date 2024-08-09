@@ -212,7 +212,7 @@
 
                                     </div>
                                     <br>
-                                
+
                                     <div>
                                         <h5 class="card-title mb-3">
                                             <img src="{{dynamicAsset('public/assets/admin/img/pointer.png')}}" class="mr-2" alt="">
