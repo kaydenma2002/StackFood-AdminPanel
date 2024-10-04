@@ -352,14 +352,19 @@ class Restaurant extends Model
 
     protected static function boot()
     {
+
         parent::boot();
+
         static::created(function ($restaurant) {
+
             $restaurant->slug = $restaurant->generateSlug($restaurant->name);
             $restaurant->save();
         });
 
         static::saved(function ($model) {
+
             if ($model->isDirty('logo')) {
+
                 $value = Helpers::getDisk();
 
                 DB::table('storages')->updateOrInsert([
@@ -373,6 +378,7 @@ class Restaurant extends Model
                 ]);
             }
             if ($model->isDirty('cover_photo')) {
+
                 $value = Helpers::getDisk();
 
                 DB::table('storages')->updateOrInsert([
@@ -386,6 +392,7 @@ class Restaurant extends Model
                 ]);
             }
             if ($model->isDirty('meta_image')) {
+
                 $value = Helpers::getDisk();
 
                 DB::table('storages')->updateOrInsert([
@@ -398,6 +405,7 @@ class Restaurant extends Model
                     'updated_at' => now(),
                 ]);
             }
+
         });
     }
 
@@ -479,13 +487,28 @@ class Restaurant extends Model
     }
     public function toSearchableArray()
     {
+
         return [
-            'id' => $this->id,
+
+            'restaurant_id' => $this->id,
             'name' => $this->name,
-            'zone_id' => $this->zone_id,
-            'active' => $this->active,
-            'weekday' => $this->weekday, // Assuming 'weekday' is an attribute
-            // Add other fields as necessary
+            'active' =>  $this->active,  // Set the active status
+            'status' => $this->status,
+            'zone_id' => $this->zone_id ?? null,       // Safe access
+            'weekday' => $this->weekday ?? null,
+            'longitude' => $this->longitude ?? null,
+            'latitude' => $this->latitude ?? null,
+            'discount' => $this->discount,
+            'open' => $this->open ?? null,
+            'created_at' => $this->created_at,
+            'orders_count' => $this->orders_count ?? 0,
+            'avg_rating' => $this->avg_rating ?? 0,
+            'reviews_count' => $this->reviews_count ?? 0,
+            'distance' => $this->distance ?? null,
         ];
+    }
+    protected function makeAllSearchableUsing(Builder $query): Builder
+    {
+        return $query->with('foods');
     }
 }

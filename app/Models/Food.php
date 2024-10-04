@@ -12,14 +12,15 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\ReportFilter;
 use Laravel\Scout\Searchable;
+use App\Jobs\CacheFoodOrders;
 
 class Food extends Model
 {
     use HasFactory, ReportFilter, Searchable;
 
     // Removed the redundant $with property to avoid unnecessary eager loading
-    // public $with = ['orders', 'storage'];
-
+    //public $with = ['orders', 'storage','translations'];
+    protected $with = ['category'];
     protected $casts = [
         'tax' => 'float',
         'price' => 'float',
@@ -197,21 +198,7 @@ class Food extends Model
         });
 
         static::retrieved(function ($food) {
-            try {
-                // Cache the orders relationship
-                $orders = cache()->remember("food_orders_{$food->id}", 60 * 60, function () use ($food) {
-                    return $food->orders()->get();
-                });
-
-                // Check if orders exist and are from today, and if stock type is daily
-                if ($orders->isNotEmpty() && $orders->where('created_at', '>=', now()->startOfDay())->isEmpty() && $food->stock_type == 'daily') {
-                    $food->sell_count = 0;
-                    $food->save();
-                    $food->newVariationOptions()->update(['sell_count' => 0]);
-                }
-            } catch (\Exception $exception) {
-                info([$exception->getFile(), $exception->getLine(), $exception->getMessage()]);
-            }
+            CacheFoodOrders::dispatch($food);
         });
 
         static::saved(function ($model) {
@@ -328,15 +315,19 @@ class Food extends Model
         }
     }
     public function toSearchableArray()
-{
-    return [
-        'id' => $this->id,
-        'name' => $this->name,
-        'description' => $this->description,
-        'active' => $this->active,
-        'restaurant_name' => $this->restaurant->name ?? null,  // Safe access
-        'zone_id' => $this->restaurant->zone_id ?? null,       // Safe access
-        'weekday' => $this->restaurant->weekday ?? null,
-    ];
-}
+    {
+
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'description' => $this->description,
+            'active' => $this->status == 1 && optional($this->restaurant)->status == 1,
+            'restaurant_name' => $this->restaurant->name ?? null,  // Safe access
+            'restaurant_id' => $this->restaurant->restaurant_id ?? null,  // Safe access
+            'zone_id' => $this->restaurant->zone_id ?? null,       // Safe access
+            'weekday' => $this->restaurant->weekday ?? null,
+            'created_at' => $this->created_at,
+            'desc' => $this->desc
+        ];
+    }
 }

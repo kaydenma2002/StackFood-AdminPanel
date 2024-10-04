@@ -174,6 +174,21 @@ trait PaymentGatewayTrait
                 "SGD" => "Singapore Dollar",
                 "HKD" => "Hong Kong Dollar"
             ],
+            "authorize_pay" => [
+                "USD" => "United States Dollar",
+                "AUD" => "Australian Dollar",
+                "CAD" => "Canadian Dollar",
+                "EUR" => "Euro",
+                "GBP" => "Pound Sterling",
+                "JPY" => "Japanese Yen",
+                "NZD" => "New Zealand Dollar",
+                "CHF" => "Swiss Franc",
+                "DKK" => "Danish Krone",
+                "NOK" => "Norwegian Krone",
+                "SEK" => "Swedish Krona",
+                "SGD" => "Singapore Dollar",
+                "HKD" => "Hong Kong Dollar"
+            ],
             "swish" => [
                 "SEK" => "Swedish Krona"
             ],

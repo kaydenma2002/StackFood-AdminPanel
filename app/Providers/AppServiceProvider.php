@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Exception;
+use MeiliSearch\Client;
 use App\Traits\AddonHelper;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Sheet;
@@ -63,5 +64,16 @@ class AppServiceProvider extends ServiceProvider
 
             }
         }
+        if (config('scout.driver') === 'meilisearch') {
+            $client = new Client(config('scout.meilisearch.host'), config('scout.meilisearch.key'));
+
+            $indexSettings = config('scout.meilisearch.index-settings');
+
+            foreach ($indexSettings as $indexName => $settings) {
+                $index = $client->index($indexName);
+                $index->updateFilterableAttributes($settings['filterableAttributes']);
+            }
+        }
     }
+
 }

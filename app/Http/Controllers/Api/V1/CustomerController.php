@@ -191,6 +191,11 @@ class CustomerController extends Controller
         $data['validity'] =(string) data_get($discount_data,'validity');
 
         unset($data['orders']);
+        if (method_exists($data, 'toArray')) {
+            $data = $data->toArray();
+        } else {
+            $data = (array)$data; // Fallback if no toArray method
+        }
         return response()->json($data, 200);
     }
 

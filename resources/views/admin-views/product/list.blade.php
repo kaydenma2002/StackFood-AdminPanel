@@ -295,7 +295,7 @@
                                                     {{ Str::limit($food->restaurant->name, 20, '...') }}
                                                 </a>
                                             @else
-                                                <span class="text--danger text-capitalize">{{ $food }}<span>
+                                                <span class="text--danger text-capitalize"><span>
                                             @endif
                                         </td>
                                         <td>{{ \App\CentralLogics\Helpers::format_currency($food['price']) }}</td>

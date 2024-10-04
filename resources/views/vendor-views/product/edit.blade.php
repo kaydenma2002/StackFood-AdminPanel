@@ -162,7 +162,7 @@
                                                     src="{{ dynamicAsset('/public/assets/admin/img/info-circle.svg') }}"
                                                     alt="{{ translate('messages.category_required_warning') }}"></span></label>
                                                     <select name="sub_category_id" id="sub-categories"
-                                                    data-id="{{count($product_category)>=2?$product_category[1]->id:''}}"
+    data-id="{{ is_array($product_category) && count($product_category) >= 2 ? $product_category[1]->id : '' }}"
                                                     class="form-control h--45px js-select2-custom">
 
                                             </select>
@@ -616,8 +616,8 @@
         $(document).ready(function () {
             setTimeout(function () {
                 let category = $("#category-id").val();
-                let sub_category = '{{count($product_category)>=2?$product_category[1]->id:''}}';
-                let sub_sub_category ='{{count($product_category)>=3?$product_category[2]->id:''}}';
+                let sub_category = '{{ is_array($product_category) && count($product_category) >= 2 ? $product_category[1]->id : '' }}';
+let sub_sub_category = '{{ is_array($product_category) && count($product_category) >= 3 ? $product_category[2]->id : '' }}';
                 getRequest('{{url('/')}}/restaurant-panel/food/get-categories?parent_id=' + category + '&&sub_category=' + sub_category, 'sub-categories');
                 getRequest('{{url('/')}}/restaurant-panel/food/get-categories?parent_id=' + sub_category + '&&sub_category=' + sub_sub_category, 'sub-sub-categories');
             }, 1000)

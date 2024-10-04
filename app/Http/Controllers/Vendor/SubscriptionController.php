@@ -199,6 +199,7 @@ class SubscriptionController extends Controller
         $credentials = $env . '_values';
 
         $data = [];
+
         foreach ($methods as $method) {
             $credentialsData = json_decode($method->$credentials);
             $additional_data = json_decode($method->additional_data);

@@ -197,7 +197,6 @@ return [
             'size_limit' => env('TELESCOPE_RESPONSE_SIZE_LIMIT', 64),
             'ignore_http_methods' => [],
             'ignore_status_codes' => [],
-            'slow' => 500,
         ],
 
         Watchers\ScheduleWatcher::class => env('TELESCOPE_SCHEDULE_WATCHER', true),

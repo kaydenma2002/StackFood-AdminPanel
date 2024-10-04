@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use App\Models\OfflinePaymentMethod;
 use MatanYadaev\EloquentSpatial\Objects\Point;
+use Illuminate\Support\Facades\Cache;
 
 class ConfigController extends Controller
 {
@@ -32,237 +33,319 @@ class ConfigController extends Controller
         $this->map_api_key = $map_api_key_server;
     }
 
+
     public function configuration()
     {
-        $key = [
-            'cash_on_delivery', 'digital_payment', 'default_location', 'free_delivery_over', 'business_name', 'logo', 'address', 'phone', 'email_address', 'country', 'currency_symbol_position', 'app_minimum_version_android',
-            'app_url_android', 'app_minimum_version_ios', 'app_url_ios', 'customer_verification', 'order_delivery_verification', 'terms_and_conditions', 'privacy_policy', 'about_us', 'maintenance_mode', 'popular_food', 'popular_restaurant', 'new_restaurant', 'most_reviewed_foods', 'show_dm_earning', 'canceled_by_deliveryman', 'canceled_by_restaurant', 'timeformat', 'toggle_veg_non_veg', 'toggle_dm_registration', 'toggle_restaurant_registration', 'schedule_order_slot_duration',
-            'loyalty_point_exchange_rate', 'loyalty_point_item_purchase_point', 'loyalty_point_status', 'loyalty_point_minimum_point', 'wallet_status', 'schedule_order', 'dm_tips_status', 'ref_earning_status', 'ref_earning_exchange_rate', 'theme', 'business_model', 'admin_commission', 'footer_text', 'icon', 'refund_active_status',
-            'refund_policy', 'shipping_policy', 'cancellation_policy', 'free_trial_period', 'app_minimum_version_android_restaurant',
-            'app_url_android_restaurant', 'app_minimum_version_ios_restaurant', 'app_url_ios_restaurant', 'app_minimum_version_android_deliveryman', 'tax_included', 'order_subscription',
-            'app_url_android_deliveryman', 'app_minimum_version_ios_deliveryman', 'app_url_ios_deliveryman', 'cookies_text', 'take_away', 'repeat_order_option', 'home_delivery', 'add_fund_status', 'partial_payment_status', 'partial_payment_method', 'additional_charge', 'additional_charge_status', 'additional_charge_name', 'dm_picture_upload_status', 'offline_payment_status', 'instant_order', 'customer_date_order_sratus', 'customer_order_date', 'free_delivery_distance', 'guest_checkout_status', 'country_picker_status', 'disbursement_type', 'restaurant_disbursement_waiting_time', 'dm_disbursement_waiting_time', 'min_amount_to_pay_restaurant', 'extra_packaging_charge', 'min_amount_to_pay_dm', 'restaurant_review_reply'
-        ];
-
-
-        $deliveryman_additional_join_us_page_data =   DataSetting::Where('type', 'deliveryman')->where('key', 'deliveryman_page_data')->first()?->value;
-        $deliveryman_additional_join_us_page_data =  $deliveryman_additional_join_us_page_data  && count(json_decode($deliveryman_additional_join_us_page_data, true))  > 0 ? json_decode($deliveryman_additional_join_us_page_data, true)  : null;
-
-        $restaurant_additional_join_us_page_data =   DataSetting::Where('type', 'restaurant')->where('key', 'restaurant_page_data')->first()?->value;
-        $restaurant_additional_join_us_page_data =  $restaurant_additional_join_us_page_data && count(json_decode($restaurant_additional_join_us_page_data, true))  > 0 ? json_decode($restaurant_additional_join_us_page_data, true)  : null;
-
-        $banner_data =  DataSetting::where('type', 'promotional_banner')->whereIn('key', ['promotional_banner_title', 'promotional_banner_image'])->pluck('value', 'key')->toArray();
-        $banner_data_storage = DataSetting::where('type', 'promotional_banner')->where('key', 'promotional_banner_image')->first()?->storage[0]?->value ?? 'public';
-        $banner_data['promotional_banner_image_full_url'] = Helpers::get_full_url('banner', $banner_data['promotional_banner_image'], $banner_data_storage);
-        $social_login = [];
-        $social_login_data = Helpers::get_business_settings('social_login') ?? [];
-        foreach ($social_login_data as $social) {
-            $config = [
-                'login_medium' => $social['login_medium'],
-                'status' => (bool)$social['status']
+        return Cache::remember('configuration_settings', now()->addMinutes(60), function () {
+            $key = [
+                'cash_on_delivery',
+                'digital_payment',
+                'default_location',
+                'free_delivery_over',
+                'business_name',
+                'logo',
+                'address',
+                'phone',
+                'email_address',
+                'country',
+                'currency_symbol_position',
+                'app_minimum_version_android',
+                'app_url_android',
+                'app_minimum_version_ios',
+                'app_url_ios',
+                'customer_verification',
+                'order_delivery_verification',
+                'terms_and_conditions',
+                'privacy_policy',
+                'about_us',
+                'maintenance_mode',
+                'popular_food',
+                'popular_restaurant',
+                'new_restaurant',
+                'most_reviewed_foods',
+                'show_dm_earning',
+                'canceled_by_deliveryman',
+                'canceled_by_restaurant',
+                'timeformat',
+                'toggle_veg_non_veg',
+                'toggle_dm_registration',
+                'toggle_restaurant_registration',
+                'schedule_order_slot_duration',
+                'loyalty_point_exchange_rate',
+                'loyalty_point_item_purchase_point',
+                'loyalty_point_status',
+                'loyalty_point_minimum_point',
+                'wallet_status',
+                'schedule_order',
+                'dm_tips_status',
+                'ref_earning_status',
+                'ref_earning_exchange_rate',
+                'theme',
+                'business_model',
+                'admin_commission',
+                'footer_text',
+                'icon',
+                'refund_active_status',
+                'refund_policy',
+                'shipping_policy',
+                'cancellation_policy',
+                'free_trial_period',
+                'app_minimum_version_android_restaurant',
+                'app_url_android_restaurant',
+                'app_minimum_version_ios_restaurant',
+                'app_url_ios_restaurant',
+                'app_minimum_version_android_deliveryman',
+                'tax_included',
+                'order_subscription',
+                'app_url_android_deliveryman',
+                'app_minimum_version_ios_deliveryman',
+                'app_url_ios_deliveryman',
+                'cookies_text',
+                'take_away',
+                'repeat_order_option',
+                'home_delivery',
+                'add_fund_status',
+                'partial_payment_status',
+                'partial_payment_method',
+                'additional_charge',
+                'additional_charge_status',
+                'additional_charge_name',
+                'dm_picture_upload_status',
+                'offline_payment_status',
+                'instant_order',
+                'customer_date_order_sratus',
+                'customer_order_date',
+                'free_delivery_distance',
+                'guest_checkout_status',
+                'country_picker_status',
+                'disbursement_type',
+                'restaurant_disbursement_waiting_time',
+                'dm_disbursement_waiting_time',
+                'min_amount_to_pay_restaurant',
+                'extra_packaging_charge',
+                'min_amount_to_pay_dm',
+                'restaurant_review_reply'
             ];
-            array_push($social_login, $config);
-        }
 
-        //addon settings publish status
-        $published_status = 0; // Set a default value
-        $payment_published_status = config('get_payment_publish_status');
-        if (isset($payment_published_status[0]['is_published'])) {
-            $published_status = $payment_published_status[0]['is_published'];
-        }
+            $deliveryman_additional_join_us_page_data = DataSetting::Where('type', 'deliveryman')->where('key', 'deliveryman_page_data')->first()?->value;
+            $deliveryman_additional_join_us_page_data = $deliveryman_additional_join_us_page_data && count(json_decode($deliveryman_additional_join_us_page_data, true)) > 0 ? json_decode($deliveryman_additional_join_us_page_data, true) : null;
 
-        $active_addon_payment_lists = $published_status == 1 ? $this->getPaymentMethods() : $this->getDefaultPaymentMethods();
+            $restaurant_additional_join_us_page_data = DataSetting::Where('type', 'restaurant')->where('key', 'restaurant_page_data')->first()?->value;
+            $restaurant_additional_join_us_page_data = $restaurant_additional_join_us_page_data && count(json_decode($restaurant_additional_join_us_page_data, true)) > 0 ? json_decode($restaurant_additional_join_us_page_data, true) : null;
 
-
-        $settings =  array_column(BusinessSetting::whereIn('key', $key)->get()->toArray(), 'value', 'key');
-
-        $image_key = ['logo', 'icon'];
-        $data = [];
-
-        foreach ($image_key as $value) {
-            $data[$value . '_storage'] = BusinessSetting::where('key', $value)->first()?->storage[0]?->value ?? 'public';
-        }
-
-        $currency_symbol = Currency::where(['currency_code' => Helpers::currency_code()])->first()?->currency_symbol;
-        $cod = json_decode($settings['cash_on_delivery'], true);
-        $business_plan = isset($settings['business_model']) ? json_decode($settings['business_model'], true) : [
-            'commission'        =>  1,
-            'subscription'     =>  0,
-        ];
-
-        $digital_payment = json_decode($settings['digital_payment'], true);
-
-        $digital_payment_infos = array(
-            'digital_payment' => (bool)($digital_payment['status'] == 1 ? true : false),
-            'plugin_payment_gateways' =>  (bool)($published_status ? true : false),
-            'default_payment_gateways' =>  (bool)($published_status ? false : true)
-        );
-
-        $default_location = isset($settings['default_location']) ? json_decode($settings['default_location'], true) : 0;
-        $free_delivery_over = $settings['free_delivery_over'];
-        $free_delivery_over = $free_delivery_over ? (float)$free_delivery_over : $free_delivery_over;
-
-        $free_delivery_distance = isset($settings['free_delivery_distance']) ? (float)$settings['free_delivery_distance'] : 0;
-        $languages = Helpers::get_business_settings('language');
-        $lang_array = [];
-        foreach ($languages as $language) {
-            array_push($lang_array, [
-                'key' => $language,
-                'value' => Helpers::get_language_name($language)
-            ]);
-        }
-
-
-        $apple_login = [];
-        $apples = Helpers::get_business_settings('apple_login');
-        if (isset($apples)) {
-            foreach (Helpers::get_business_settings('apple_login') as $apple) {
+            $banner_data = DataSetting::where('type', 'promotional_banner')->whereIn('key', ['promotional_banner_title', 'promotional_banner_image'])->pluck('value', 'key')->toArray();
+            $banner_data_storage = DataSetting::where('type', 'promotional_banner')->where('key', 'promotional_banner_image')->first()?->storage[0]?->value ?? 'public';
+            $banner_data['promotional_banner_image_full_url'] = Helpers::get_full_url('banner', $banner_data['promotional_banner_image'], $banner_data_storage);
+            $social_login = [];
+            $social_login_data = Helpers::get_business_settings('social_login') ?? [];
+            foreach ($social_login_data as $social) {
                 $config = [
-                    'login_medium' => $apple['login_medium'],
-                    'status' => (bool)$apple['status'],
-                    'client_id' => $apple['client_id']
+                    'login_medium' => $social['login_medium'],
+                    'status' => (bool)$social['status']
                 ];
-                array_push($apple_login, $config);
+                array_push($social_login, $config);
             }
-        }
 
-        return response()->json([
-            'business_name' => $settings['business_name'],
-            'logo' => $settings['logo'],
-            'logo_full_url' => Helpers::get_full_url('business', $settings['logo'], $data['logo_storage'] ?? 'public'),
-            'address' => $settings['address'],
-            'phone' => $settings['phone'],
-            'email' => $settings['email_address'],
-            'base_urls' => [
-                'product_image_url' => dynamicStorage('storage/app/public/product'),
-                'customer_image_url' => dynamicStorage('storage/app/public/profile'),
-                'banner_image_url' => dynamicStorage('storage/app/public/banner'),
-                'category_image_url' => dynamicStorage('storage/app/public/category'),
-                'cuisine_image_url' => dynamicStorage('storage/app/public/cuisine'),
-                'review_image_url' => dynamicStorage('storage/app/public/review'),
-                'notification_image_url' => dynamicStorage('storage/app/public/notification'),
-                'restaurant_image_url' => dynamicStorage('storage/app/public/restaurant'),
-                'vendor_image_url' => dynamicStorage('storage/app/public/vendor'),
-                'restaurant_cover_photo_url' => dynamicStorage('storage/app/public/restaurant/cover'),
-                'delivery_man_image_url' => dynamicStorage('storage/app/public/delivery-man'),
-                'chat_image_url' => dynamicStorage('storage/app/public/conversation'),
-                'campaign_image_url' => dynamicStorage('storage/app/public/campaign'),
-                'business_logo_url' => dynamicStorage('storage/app/public/business'),
-                'react_landing_page_images' => dynamicStorage('storage/app/public/react_landing'),
-                'react_landing_page_feature_images' => dynamicStorage('storage/app/public/react_landing/feature'),
-                'refund_image_url' => dynamicStorage('storage/app/public/refund'),
-                'gateway_image_url' => dynamicStorage('storage/app/public/payment_modules/gateway_image'),
-                'order_attachment_url' => dynamicStorage('storage/app/public/order'),
+            //addon settings publish status
+            $published_status = 0; // Set a default value
+            $payment_published_status = config('get_payment_publish_status');
+            if (isset($payment_published_status[0]['is_published'])) {
+                $published_status = $payment_published_status[0]['is_published'];
+            }
 
-            ],
-            'country' => $settings['country'],
-            'default_location' => ['lat' => $default_location ? $default_location['lat'] : '23.757989', 'lng' => $default_location ? $default_location['lng'] : '90.360587'],
-            'currency_symbol' => $currency_symbol,
-            'currency_symbol_direction' => $settings['currency_symbol_position'],
-            'app_minimum_version_android' => (float)$settings['app_minimum_version_android'],
-            'app_url_android' => $settings['app_url_android'],
-            'app_minimum_version_ios' => (float)$settings['app_minimum_version_ios'],
-            'app_url_ios' => $settings['app_url_ios'],
-            'customer_verification' => (bool)$settings['customer_verification'],
-            'schedule_order' => (bool)$settings['schedule_order'],
-            'order_delivery_verification' => (bool)$settings['order_delivery_verification'],
-            'cash_on_delivery' => (bool)($cod['status'] == 1 ? true : false),
-            'digital_payment' => (bool)($digital_payment['status'] == 1 ? true : false),
+            $active_addon_payment_lists = $published_status == 1 ? $this->getPaymentMethods() : $this->getDefaultPaymentMethods();
 
-            'free_delivery_over' => $free_delivery_over,
-            'free_delivery_distance' => $free_delivery_distance,
-            'demo' => (bool)(env('APP_MODE') == 'demo' ? true : false),
-            'maintenance_mode' => (bool)Helpers::get_business_settings('maintenance_mode') ?? 0,
-            'order_confirmation_model' => config('order_confirmation_model'),
-            'popular_food' => (float)$settings['popular_food'],
-            'popular_restaurant' => (float)$settings['popular_restaurant'],
-            'new_restaurant' => (float)$settings['new_restaurant'],
-            'most_reviewed_foods' => (float)$settings['most_reviewed_foods'],
-            'show_dm_earning' => (bool)$settings['show_dm_earning'],
-            'canceled_by_deliveryman' => (bool)$settings['canceled_by_deliveryman'],
-            'canceled_by_restaurant' => (bool)$settings['canceled_by_restaurant'],
-            'timeformat' => (string)$settings['timeformat'],
-            'language' => $lang_array,
-            'toggle_veg_non_veg' => (bool)$settings['toggle_veg_non_veg'],
-            'toggle_dm_registration' => (bool)$settings['toggle_dm_registration'],
-            'toggle_restaurant_registration' => (bool)$settings['toggle_restaurant_registration'],
-            'schedule_order_slot_duration' => (int)$settings['schedule_order_slot_duration'],
-            'digit_after_decimal_point' => (int)config('round_up_to_digit'),
-            'loyalty_point_exchange_rate' => (int)(isset($settings['loyalty_point_item_purchase_point']) ? $settings['loyalty_point_exchange_rate'] : 0),
-            'loyalty_point_item_purchase_point' => (float)(isset($settings['loyalty_point_item_purchase_point']) ? $settings['loyalty_point_item_purchase_point'] : 0.0),
-            'loyalty_point_status' => (int)(isset($settings['loyalty_point_status']) ? $settings['loyalty_point_status'] : 0),
-            'minimum_point_to_transfer' => (int)(isset($settings['loyalty_point_minimum_point']) ? $settings['loyalty_point_minimum_point'] : 0),
-            'customer_wallet_status' => (int)(isset($settings['wallet_status']) ? $settings['wallet_status'] : 0),
-            'ref_earning_status' => (int)(isset($settings['ref_earning_status']) ? $settings['ref_earning_status'] : 0),
-            'ref_earning_exchange_rate' => (float)(isset($settings['ref_earning_exchange_rate']) ? $settings['ref_earning_exchange_rate'] : 0),
-            'dm_tips_status' => (int)(isset($settings['dm_tips_status']) ? $settings['dm_tips_status'] : 0),
-            'theme' => (int)$settings['theme'],
-            'social_media' => SocialMedia::active()->get()->toArray(),
-            'social_login' => $social_login,
-            'business_plan' => $business_plan,
-            'admin_commission' => (float)(isset($settings['admin_commission']) ? $settings['admin_commission'] : 0),
-            'footer_text' => $settings['footer_text'],
-            'fav_icon' => $settings['icon'],
-            'fav_icon_full_url' => Helpers::get_full_url('business', $settings['icon'], $data['icon_storage'] ?? 'public'),
-            'refund_active_status' => (bool)(isset($settings['refund_active_status']) ? $settings['refund_active_status'] : 0),
+            $settings = array_column(BusinessSetting::whereIn('key', $key)->get()->toArray(), 'value', 'key');
 
-            'free_trial_period_status' => (int)(isset($settings['free_trial_period']) ? json_decode($settings['free_trial_period'], true)['status'] : 0),
-            'free_trial_period_data' =>  (int)(isset($settings['free_trial_period']) ? json_decode($settings['free_trial_period'], true)['data'] : 0),
+            $image_key = ['logo', 'icon'];
+            $data = [];
 
-            'app_minimum_version_android_restaurant' => (float)(isset($settings['app_minimum_version_android_restaurant']) ? $settings['app_minimum_version_android_restaurant'] : 0),
-            'app_url_android_restaurant' => (isset($settings['app_url_android_restaurant']) ? $settings['app_url_android_restaurant'] : null),
-            'app_minimum_version_ios_restaurant' => (float)(isset($settings['app_minimum_version_ios_restaurant']) ? $settings['app_minimum_version_ios_restaurant'] : 0),
-            'app_url_ios_restaurant' => (isset($settings['app_url_ios_restaurant']) ? $settings['app_url_ios_restaurant'] : null),
-            'app_minimum_version_android_deliveryman' => (float)(isset($settings['app_minimum_version_android_deliveryman']) ? $settings['app_minimum_version_android_deliveryman'] : 0),
-            'app_url_android_deliveryman' => (isset($settings['app_url_android_deliveryman']) ? $settings['app_url_android_deliveryman'] : null),
-            'app_minimum_version_ios_deliveryman' => (isset($settings['app_minimum_version_ios_deliveryman']) ? $settings['app_minimum_version_ios_deliveryman'] : null),
-            'app_url_ios_deliveryman' => (isset($settings['app_url_ios_deliveryman']) ? $settings['app_url_ios_deliveryman'] : null),
-            'tax_included' => (int)(isset($settings['tax_included']) ? $settings['tax_included'] : 0),
-            'apple_login' => $apple_login,
-            'order_subscription' => (int)(isset($settings['order_subscription']) ? $settings['order_subscription'] : 0),
-            'cookies_text' => isset($settings['cookies_text']) ? $settings['cookies_text'] : '',
+            foreach ($image_key as $value) {
+                $data[$value . '_storage'] = BusinessSetting::where('key', $value)->first()?->storage[0]?->value ?? 'public';
+            }
 
-            'refund_policy_status' => (int)(self::get_settings_data('refund_policy_status')),
-            'cancellation_policy_status' => (int)(self::get_settings_data('cancellation_policy_status')),
-            'shipping_policy_status' => (int)(self::get_settings_data('shipping_policy_status')),
+            $currency_symbol = Currency::where(['currency_code' => Helpers::currency_code()])->first()?->currency_symbol;
+            $cod = json_decode($settings['cash_on_delivery'], true);
+            $business_plan = isset($settings['business_model']) ? json_decode($settings['business_model'], true) : [
+                'commission' => 1,
+                'subscription' => 0,
+            ];
 
-            'refund_policy_data' => (string) (self::get_settings_data('refund_policy')),
-            'cancellation_policy_data' => (string)(self::get_settings_data('cancellation_policy')),
-            'shipping_policy_data' => (string)(self::get_settings_data('shipping_policy')),
-            'terms_and_conditions' => (string) (self::get_settings_data('terms_and_conditions')),
-            'privacy_policy' => (string) (self::get_settings_data('privacy_policy')),
-            'about_us' => (string) (self::get_settings_data('about_us')),
+            $digital_payment = json_decode($settings['digital_payment'], true);
 
-            'take_away' => (bool)(isset($settings['take_away']) ? $settings['take_away'] : false),
-            'repeat_order_option' => (bool)(isset($settings['repeat_order_option']) ? $settings['repeat_order_option'] : false),
-            'home_delivery' => (bool)(isset($settings['home_delivery']) ? $settings['home_delivery'] : false),
-            'active_payment_method_list' => $active_addon_payment_lists ?? [],
-            'add_fund_status' => (int)(isset($settings['add_fund_status']) ? $settings['add_fund_status'] : 0),
-            'partial_payment_status' => (int)(isset($settings['partial_payment_status']) ? $settings['partial_payment_status'] : 0),
-            'partial_payment_method' => (isset($settings['partial_payment_method']) ? $settings['partial_payment_method'] : ''),
-            'additional_charge_status' => (int)(isset($settings['additional_charge_status']) ? $settings['additional_charge_status'] : 0),
-            'additional_charge_name' => (isset($settings['additional_charge_name']) ? $settings['additional_charge_name'] : 'Service Charge'),
-            'additional_charge' => (float)(isset($settings['additional_charge']) ? $settings['additional_charge'] : 0),
-            'dm_picture_upload_status' => (int)(isset($settings['dm_picture_upload_status']) ? $settings['dm_picture_upload_status'] : 0),
-            'digital_payment_info' => $digital_payment_infos,
-            'banner_data' => count($banner_data) > 0 ? $banner_data : null,
-            'offline_payment_status' => (int)(isset($settings['offline_payment_status']) ? $settings['offline_payment_status'] : 0),
-            'guest_checkout_status' => (int)(isset($settings['guest_checkout_status']) ? $settings['guest_checkout_status'] : 0),
-            'country_picker_status' => (int)(isset($settings['country_picker_status']) ? $settings['country_picker_status'] : 0),
+            $digital_payment_infos = [
+                'digital_payment' => (bool)($digital_payment['status'] == 1 ? true : false),
+                'plugin_payment_gateways' => (bool)($published_status ? true : false),
+                'default_payment_gateways' => (bool)($published_status ? false : true)
+            ];
 
-            'instant_order' => (bool)(isset($settings['instant_order']) ? $settings['instant_order'] : 0),
-            'extra_packaging_charge' => (bool)(isset($settings['extra_packaging_charge']) ? $settings['extra_packaging_charge'] : 0),
-            'customer_date_order_sratus' => (bool)(isset($settings['customer_date_order_sratus']) ? $settings['customer_date_order_sratus'] : 0),
-            'customer_order_date' => (int)(isset($settings['customer_order_date']) ? $settings['customer_order_date'] : 0),
-            'deliveryman_additional_join_us_page_data' => $deliveryman_additional_join_us_page_data,
-            'restaurant_additional_join_us_page_data' => $restaurant_additional_join_us_page_data,
-            'disbursement_type' => (string)(isset($settings['disbursement_type']) ? $settings['disbursement_type'] : 'manual'),
-            'restaurant_disbursement_waiting_time' => (int)(isset($settings['restaurant_disbursement_waiting_time']) ? $settings['restaurant_disbursement_waiting_time'] : 0),
-            'dm_disbursement_waiting_time' => (int)(isset($settings['dm_disbursement_waiting_time']) ? $settings['dm_disbursement_waiting_time'] : 0),
-            'min_amount_to_pay_restaurant' => (float)(isset($settings['min_amount_to_pay_restaurant']) ? $settings['min_amount_to_pay_restaurant'] : 0),
-            'min_amount_to_pay_dm' => (float)(isset($settings['min_amount_to_pay_dm']) ? $settings['min_amount_to_pay_dm'] : 0),
-            'restaurant_review_reply' => (bool)(isset($settings['restaurant_review_reply']) ? $settings['restaurant_review_reply'] : false),
-        ]);
+            $default_location = isset($settings['default_location']) ? json_decode($settings['default_location'], true) : 0;
+            $free_delivery_over = $settings['free_delivery_over'];
+            $free_delivery_over = $free_delivery_over ? (float)$free_delivery_over : $free_delivery_over;
+
+            $free_delivery_distance = isset($settings['free_delivery_distance']) ? (float)$settings['free_delivery_distance'] : 0;
+            $languages = Helpers::get_business_settings('language');
+            $lang_array = [];
+            foreach ($languages as $language) {
+                array_push($lang_array, [
+                    'key' => $language,
+                    'value' => Helpers::get_language_name($language)
+                ]);
+            }
+
+            $apple_login = [];
+            $apples = Helpers::get_business_settings('apple_login');
+            if (isset($apples)) {
+                foreach (Helpers::get_business_settings('apple_login') as $apple) {
+                    $config = [
+                        'login_medium' => $apple['login_medium'],
+                        'status' => (bool)$apple['status'],
+                        'client_id' => $apple['client_id']
+                    ];
+                    array_push($apple_login, $config);
+                }
+            }
+
+            return response()->json([
+                'business_name' => $settings['business_name'],
+                'logo' => $settings['logo'],
+                'logo_full_url' => Helpers::get_full_url('business', $settings['logo'], $data['logo_storage'] ?? 'public'),
+                'address' => $settings['address'],
+                'phone' => $settings['phone'],
+                'email' => $settings['email_address'],
+                'base_urls' => [
+                    'product_image_url' => dynamicStorage('storage/app/public/product'),
+                    'customer_image_url' => dynamicStorage('storage/app/public/profile'),
+                    'banner_image_url' => dynamicStorage('storage/app/public/banner'),
+                    'category_image_url' => dynamicStorage('storage/app/public/category'),
+                    'cuisine_image_url' => dynamicStorage('storage/app/public/cuisine'),
+                    'review_image_url' => dynamicStorage('storage/app/public/review'),
+                    'notification_image_url' => dynamicStorage('storage/app/public/notification'),
+                    'restaurant_image_url' => dynamicStorage('storage/app/public/restaurant'),
+                    'vendor_image_url' => dynamicStorage('storage/app/public/vendor'),
+                    'restaurant_cover_photo_url' => dynamicStorage('storage/app/public/restaurant/cover'),
+                    'delivery_man_image_url' => dynamicStorage('storage/app/public/delivery-man'),
+                    'chat_image_url' => dynamicStorage('storage/app/public/conversation'),
+                    'campaign_image_url' => dynamicStorage('storage/app/public/campaign'),
+                    'business_logo_url' => dynamicStorage('storage/app/public/business'),
+                    'react_landing_page_images' => dynamicStorage('storage/app/public/react_landing'),
+                    'react_landing_page_feature_images' => dynamicStorage('storage/app/public/react_landing/feature'),
+                    'refund_image_url' => dynamicStorage('storage/app/public/refund'),
+                    'gateway_image_url' => dynamicStorage('storage/app/public/payment_modules/gateway_image'),
+                    'order_attachment_url' => dynamicStorage('storage/app/public/order'),
+
+                ],
+                'country' => $settings['country'],
+                'default_location' => ['lat' => $default_location ? $default_location['lat'] : '23.757989', 'lng' => $default_location ? $default_location['lng'] : '90.360587'],
+                'currency_symbol' => $currency_symbol,
+                'currency_symbol_direction' => $settings['currency_symbol_position'],
+                'app_minimum_version_android' => (float)$settings['app_minimum_version_android'],
+                'app_url_android' => $settings['app_url_android'],
+                'app_minimum_version_ios' => (float)$settings['app_minimum_version_ios'],
+                'app_url_ios' => $settings['app_url_ios'],
+                'customer_verification' => (bool)$settings['customer_verification'],
+                'schedule_order' => (bool)$settings['schedule_order'],
+                'order_delivery_verification' => (bool)$settings['order_delivery_verification'],
+                'cash_on_delivery' => (bool)($cod['status'] == 1 ? true : false),
+                'digital_payment' => (bool)($digital_payment['status'] == 1 ? true : false),
+
+                'free_delivery_over' => $free_delivery_over,
+                'free_delivery_distance' => $free_delivery_distance,
+                'demo' => (bool)(env('APP_MODE') == 'demo' ? true : false),
+                'maintenance_mode' => (bool)Helpers::get_business_settings('maintenance_mode') ?? 0,
+                'order_confirmation_model' => config('order_confirmation_model'),
+                'popular_food' => (float)$settings['popular_food'],
+                'popular_restaurant' => (float)$settings['popular_restaurant'],
+                'new_restaurant' => (float)$settings['new_restaurant'],
+                'most_reviewed_foods' => (float)$settings['most_reviewed_foods'],
+                'show_dm_earning' => (bool)$settings['show_dm_earning'],
+                'canceled_by_deliveryman' => (bool)$settings['canceled_by_deliveryman'],
+                'canceled_by_restaurant' => (bool)$settings['canceled_by_restaurant'],
+                'timeformat' => (string)$settings['timeformat'],
+                'language' => $lang_array,
+                'toggle_veg_non_veg' => (bool)$settings['toggle_veg_non_veg'],
+                'toggle_dm_registration' => (bool)$settings['toggle_dm_registration'],
+                'toggle_restaurant_registration' => (bool)$settings['toggle_restaurant_registration'],
+                'schedule_order_slot_duration' => (int)$settings['schedule_order_slot_duration'],
+                'digit_after_decimal_point' => (int)config('round_up_to_digit'),
+                'loyalty_point_exchange_rate' => (int)(isset($settings['loyalty_point_item_purchase_point']) ? $settings['loyalty_point_exchange_rate'] : 0),
+                'loyalty_point_item_purchase_point' => (float)(isset($settings['loyalty_point_item_purchase_point']) ? $settings['loyalty_point_item_purchase_point'] : 0.0),
+                'loyalty_point_status' => (int)(isset($settings['loyalty_point_status']) ? $settings['loyalty_point_status'] : 0),
+                'minimum_point_to_transfer' => (int)(isset($settings['loyalty_point_minimum_point']) ? $settings['loyalty_point_minimum_point'] : 0),
+                'customer_wallet_status' => (int)(isset($settings['wallet_status']) ? $settings['wallet_status'] : 0),
+                'ref_earning_status' => (int)(isset($settings['ref_earning_status']) ? $settings['ref_earning_status'] : 0),
+                'ref_earning_exchange_rate' => (float)(isset($settings['ref_earning_exchange_rate']) ? $settings['ref_earning_exchange_rate'] : 0),
+                'dm_tips_status' => (int)(isset($settings['dm_tips_status']) ? $settings['dm_tips_status'] : 0),
+                'theme' => (int)$settings['theme'],
+                'social_media' => SocialMedia::active()->get()->toArray(),
+                'social_login' => $social_login,
+                'business_plan' => $business_plan,
+                'admin_commission' => (float)(isset($settings['admin_commission']) ? $settings['admin_commission'] : 0),
+                'footer_text' => $settings['footer_text'],
+                'fav_icon' => $settings['icon'],
+                'fav_icon_full_url' => Helpers::get_full_url('business', $settings['icon'], $data['icon_storage'] ?? 'public'),
+                'refund_active_status' => (bool)(isset($settings['refund_active_status']) ? $settings['refund_active_status'] : 0),
+
+                'free_trial_period_status' => (int)(isset($settings['free_trial_period']) ? json_decode($settings['free_trial_period'], true)['status'] : 0),
+                'free_trial_period_data' => (int)(isset($settings['free_trial_period']) ? json_decode($settings['free_trial_period'], true)['data'] : 0),
+
+                'app_minimum_version_android_restaurant' => (float)(isset($settings['app_minimum_version_android_restaurant']) ? $settings['app_minimum_version_android_restaurant'] : 0),
+                'app_url_android_restaurant' => (isset($settings['app_url_android_restaurant']) ? $settings['app_url_android_restaurant'] : null),
+                'app_minimum_version_ios_restaurant' => (float)(isset($settings['app_minimum_version_ios_restaurant']) ? $settings['app_minimum_version_ios_restaurant'] : 0),
+                'app_url_ios_restaurant' => (isset($settings['app_url_ios_restaurant']) ? $settings['app_url_ios_restaurant'] : null),
+                'app_minimum_version_android_deliveryman' => (float)(isset($settings['app_minimum_version_android_deliveryman']) ? $settings['app_minimum_version_android_deliveryman'] : 0),
+                'app_url_android_deliveryman' => (isset($settings['app_url_android_deliveryman']) ? $settings['app_url_android_deliveryman'] : null),
+                'app_minimum_version_ios_deliveryman' => (isset($settings['app_minimum_version_ios_deliveryman']) ? $settings['app_minimum_version_ios_deliveryman'] : null),
+                'app_url_ios_deliveryman' => (isset($settings['app_url_ios_deliveryman']) ? $settings['app_url_ios_deliveryman'] : null),
+                'tax_included' => (int)(isset($settings['tax_included']) ? $settings['tax_included'] : 0),
+                'apple_login' => $apple_login,
+                'order_subscription' => (int)(isset($settings['order_subscription']) ? $settings['order_subscription'] : 0),
+                'cookies_text' => isset($settings['cookies_text']) ? $settings['cookies_text'] : '',
+
+                'refund_policy_status' => (int)(self::get_settings_data('refund_policy_status')),
+                'cancellation_policy_status' => (int)(self::get_settings_data('cancellation_policy_status')),
+                'shipping_policy_status' => (int)(self::get_settings_data('shipping_policy_status')),
+
+                'refund_policy_data' => (string)(self::get_settings_data('refund_policy')),
+                'cancellation_policy_data' => (string)(self::get_settings_data('cancellation_policy')),
+                'shipping_policy_data' => (string)(self::get_settings_data('shipping_policy')),
+                'terms_and_conditions' => (string)(self::get_settings_data('terms_and_conditions')),
+                'privacy_policy' => (string)(self::get_settings_data('privacy_policy')),
+                'about_us' => (string)(self::get_settings_data('about_us')),
+
+                'take_away' => (bool)(isset($settings['take_away']) ? $settings['take_away'] : false),
+                'repeat_order_option' => (bool)(isset($settings['repeat_order_option']) ? $settings['repeat_order_option'] : false),
+                'home_delivery' => (bool)(isset($settings['home_delivery']) ? $settings['home_delivery'] : false),
+                'active_payment_method_list' => $active_addon_payment_lists ?? [],
+                'add_fund_status' => (int)(isset($settings['add_fund_status']) ? $settings['add_fund_status'] : 0),
+                'partial_payment_status' => (int)(isset($settings['partial_payment_status']) ? $settings['partial_payment_status'] : 0),
+                'partial_payment_method' => (isset($settings['partial_payment_method']) ? $settings['partial_payment_method'] : ''),
+                'additional_charge_status' => (int)(isset($settings['additional_charge_status']) ? $settings['additional_charge_status'] : 0),
+                'additional_charge_name' => (isset($settings['additional_charge_name']) ? $settings['additional_charge_name'] : 'Service Charge'),
+                'additional_charge' => (float)(isset($settings['additional_charge']) ? $settings['additional_charge'] : 0),
+                'dm_picture_upload_status' => (int)(isset($settings['dm_picture_upload_status']) ? $settings['dm_picture_upload_status'] : 0),
+                'digital_payment_info' => $digital_payment_infos,
+                'banner_data' => count($banner_data) > 0 ? $banner_data : null,
+                'offline_payment_status' => (int)(isset($settings['offline_payment_status']) ? $settings['offline_payment_status'] : 0),
+                'guest_checkout_status' => (int)(isset($settings['guest_checkout_status']) ? $settings['guest_checkout_status'] : 0),
+                'country_picker_status' => (int)(isset($settings['country_picker_status']) ? $settings['country_picker_status'] : 0),
+
+                'instant_order' => (bool)(isset($settings['instant_order']) ? $settings['instant_order'] : 0),
+                'extra_packaging_charge' => (bool)(isset($settings['extra_packaging_charge']) ? $settings['extra_packaging_charge'] : 0),
+                'customer_date_order_sratus' => (bool)(isset($settings['customer_date_order_sratus']) ? $settings['customer_date_order_sratus'] : 0),
+                'customer_order_date' => (int)(isset($settings['customer_order_date']) ? $settings['customer_order_date'] : 0),
+                'deliveryman_additional_join_us_page_data' => $deliveryman_additional_join_us_page_data,
+                'restaurant_additional_join_us_page_data' => $restaurant_additional_join_us_page_data,
+                'disbursement_type' => (string)(isset($settings['disbursement_type']) ? $settings['disbursement_type'] : 'manual'),
+                'restaurant_disbursement_waiting_time' => (int)(isset($settings['restaurant_disbursement_waiting_time']) ? $settings['restaurant_disbursement_waiting_time'] : 0),
+                'dm_disbursement_waiting_time' => (int)(isset($settings['dm_disbursement_waiting_time']) ? $settings['dm_disbursement_waiting_time'] : 0),
+                'min_amount_to_pay_restaurant' => (float)(isset($settings['min_amount_to_pay_restaurant']) ? $settings['min_amount_to_pay_restaurant'] : 0),
+                'min_amount_to_pay_dm' => (float)(isset($settings['min_amount_to_pay_dm']) ? $settings['min_amount_to_pay_dm'] : 0),
+                'restaurant_review_reply' => (bool)(isset($settings['restaurant_review_reply']) ? $settings['restaurant_review_reply'] : false),
+            ]);
+        });
     }
+
 
 
     public static function get_settings_data($name)
@@ -282,8 +365,15 @@ class ConfigController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
         $zones = Zone::whereContains('coordinates', new Point($request->lat, $request->lng, POINT_SRID))->latest()->get([
-            'id', 'status', 'minimum_shipping_charge',
-            'increased_delivery_fee', 'increased_delivery_fee_status', 'increase_delivery_charge_message', 'per_km_shipping_charge', 'max_cod_order_amount', 'maximum_shipping_charge'
+            'id',
+            'status',
+            'minimum_shipping_charge',
+            'increased_delivery_fee',
+            'increased_delivery_fee_status',
+            'increase_delivery_charge_message',
+            'per_km_shipping_charge',
+            'max_cod_order_amount',
+            'maximum_shipping_charge'
         ]);
         if (count($zones) < 1) {
             return response()->json([
@@ -355,23 +445,57 @@ class ConfigController extends Controller
 
     public function geocode_api(Request $request)
     {
+        // Validate the request inputs
         $validator = Validator::make($request->all(), [
             'lat' => 'required',
             'lng' => 'required',
         ]);
 
-        if ($validator->errors()->count() > 0) {
+        // Return validation errors if any
+        if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
-        $response = Http::get('https://maps.googleapis.com/maps/api/geocode/json?latlng=' . $request->lat . ',' . $request->lng . '&key=' . $this->map_api_key);
-        return $response->json();
+
+        // Create a unique cache key based on the latitude and longitude
+        $cacheKey = 'geocode_' . $request->lat . '_' . $request->lng;
+
+        // Try to get the data from the cache
+        $cachedResponse = cache()->get($cacheKey);
+
+        // If the data exists in the cache, return it directly
+        if ($cachedResponse) {
+            return response()->json($cachedResponse);
+        }
+
+        // Call the external API if data is not cached
+        $response = Http::get('https://maps.googleapis.com/maps/api/geocode/json', [
+            'latlng' => $request->lat . ',' . $request->lng,
+            'key' => $this->map_api_key,
+        ]);
+
+        $responseData = $response->json();
+
+        // Cache the response data for 1 hour (3600 seconds)
+        cache()->put($cacheKey, $responseData, 60 * 60);
+
+        // Return the response data
+        return response()->json($responseData);
     }
+
 
     public function landing_page()
     {
         $key = [
-            'react_header_banner', 'banner_section_full', 'banner_section_half', 'footer_logo', 'app_section_image',
-            'react_feature', 'discount_banner', 'landing_page_links', 'react_self_registration_restaurant', 'react_self_registration_delivery_man'
+            'react_header_banner',
+            'banner_section_full',
+            'banner_section_half',
+            'footer_logo',
+            'app_section_image',
+            'react_feature',
+            'discount_banner',
+            'landing_page_links',
+            'react_self_registration_restaurant',
+            'react_self_registration_delivery_man'
         ];
         $settings =  array_column(BusinessSetting::whereIn('key', $key)->get()->toArray(), 'value', 'key');
 
@@ -468,7 +592,18 @@ class ConfigController extends Controller
 
     public function react_landing_page()
     {
-        // $settings =  DataSetting::where('type','react_landing_page')->pluck('value','key')->toArray();
+        // Define a unique cache key
+        $cacheKey = 'react_landing_page_data';
+
+        // Try to get the data from the cache
+        $cachedData = cache()->get($cacheKey);
+
+        // If the data exists in the cache, return it directly
+        if ($cachedData) {
+            return response()->json($cachedData);
+        }
+
+        // If not cached, fetch the data from the database
         $datas =  DataSetting::with('translations')->where('type', 'react_landing_page')->get();
         $data = [];
         foreach ($datas as $key => $value) {
@@ -484,7 +619,6 @@ class ConfigController extends Controller
                 array_push($data, $cred);
             }
             if (isset($value->storage)) {
-
                 $cred = [
                     $value->key . '_storage' => $value?->storage[0]?->value ?? 'public',
                 ];
@@ -501,79 +635,78 @@ class ConfigController extends Controller
         $services =  ReactService::orderBy('id', 'asc')->where('status', 1)->get();
         $ReactPromotionalBanner =  ReactPromotionalBanner::orderBy('id', 'asc')->where('status', 1)->get();
 
-        // dd($settings);
         $restaurant_section = [
-            'react_restaurant_section_title' => (isset($settings['react_restaurant_section_title']))  ? $settings['react_restaurant_section_title'] : null,
-            'react_restaurant_section_sub_title' => (isset($settings['react_restaurant_section_sub_title']))  ? $settings['react_restaurant_section_sub_title'] : null,
-            'react_restaurant_section_button_name' => (isset($settings['react_restaurant_section_button_name']))  ? $settings['react_restaurant_section_button_name'] : null,
-            // 'react_restaurant_section_link_data'=> (isset($settings['react_restaurant_section_link_data']) )  ? json_decode($settings['react_restaurant_section_link_data'] , true) : [] ,
+            'react_restaurant_section_title' => $settings['react_restaurant_section_title'] ?? null,
+            'react_restaurant_section_sub_title' => $settings['react_restaurant_section_sub_title'] ?? null,
+            'react_restaurant_section_button_name' => $settings['react_restaurant_section_button_name'] ?? null,
             'react_restaurant_section_link_data' => [
-                'react_restaurant_section_button_status' => (int) (isset($settings['react_restaurant_section_button_status']))  ? $settings['react_restaurant_section_button_status'] : 0,
-                'react_restaurant_section_link' => isset($settings['react_restaurant_section_link_data'])   ? $settings['react_restaurant_section_link_data'] : null,
+                'react_restaurant_section_button_status' => (int) ($settings['react_restaurant_section_button_status'] ?? 0),
+                'react_restaurant_section_link' => $settings['react_restaurant_section_link_data'] ?? null,
             ],
-            'react_restaurant_section_image' => (isset($settings['react_restaurant_section_image']))  ? $settings['react_restaurant_section_image']  : null,
-            'react_restaurant_section_image_full_url' => Helpers::get_full_url('react_restaurant_section_image', (isset($settings['react_restaurant_section_image']))  ? $settings['react_restaurant_section_image'] : null, isset($settings['react_restaurant_section_image_storage'])   ? $settings['react_restaurant_section_image_storage'] : 'public'),
+            'react_restaurant_section_image' => $settings['react_restaurant_section_image'] ?? null,
+            'react_restaurant_section_image_full_url' => Helpers::get_full_url('react_restaurant_section_image', $settings['react_restaurant_section_image'] ?? null, $settings['react_restaurant_section_image_storage'] ?? 'public'),
         ];
         $delivery_section = [
-            'react_delivery_section_title' => (isset($settings['react_delivery_section_title']))  ? $settings['react_delivery_section_title'] : null,
-            'react_delivery_section_sub_title' => (isset($settings['react_delivery_section_sub_title']))  ? $settings['react_delivery_section_sub_title'] : null,
-            'react_delivery_section_button_name' => (isset($settings['react_delivery_section_button_name']))  ? $settings['react_delivery_section_button_name'] : null,
-            // 'react_delivery_section_link_data'=> (isset($settings['react_delivery_section_link_data']) )  ? json_decode($settings['react_delivery_section_link_data'] , true) : [] ,
+            'react_delivery_section_title' => $settings['react_delivery_section_title'] ?? null,
+            'react_delivery_section_sub_title' => $settings['react_delivery_section_sub_title'] ?? null,
+            'react_delivery_section_button_name' => $settings['react_delivery_section_button_name'] ?? null,
             'react_delivery_section_link_data' => [
-                'react_delivery_section_button_status' => (int) (isset($settings['react_delivery_section_button_status']))  ? $settings['react_delivery_section_button_status'] : 0,
-                'react_delivery_section_link' => (isset($settings['react_delivery_section_link_data']))  ? $settings['react_delivery_section_link_data'] : null,
+                'react_delivery_section_button_status' => (int) ($settings['react_delivery_section_button_status'] ?? 0),
+                'react_delivery_section_link' => $settings['react_delivery_section_link_data'] ?? null,
             ],
-            'react_delivery_section_image' => (isset($settings['react_delivery_section_image']))  ? $settings['react_delivery_section_image'] : null,
-            'react_delivery_section_image_full_url' => Helpers::get_full_url('react_delivery_section_image', (isset($settings['react_delivery_section_image']))  ? $settings['react_delivery_section_image'] : null, isset($settings['react_delivery_section_image_storage'])   ? $settings['react_delivery_section_image_storage'] : 'public'),
+            'react_delivery_section_image' => $settings['react_delivery_section_image'] ?? null,
+            'react_delivery_section_image_full_url' => Helpers::get_full_url('react_delivery_section_image', $settings['react_delivery_section_image'] ?? null, $settings['react_delivery_section_image_storage'] ?? 'public'),
         ];
         $download_app_section = [
-            'react_download_apps_banner_image' => (isset($settings['react_download_apps_banner_image']))  ? $settings['react_download_apps_banner_image'] : null,
-            'react_download_apps_banner_image_full_url' => Helpers::get_full_url('react_download_apps_image', (isset($settings['react_download_apps_banner_image']))  ? $settings['react_download_apps_banner_image'] : null, isset($settings['react_download_apps_banner_image_storage'])   ? $settings['react_download_apps_banner_image_storage'] : 'public'),
-            'react_download_apps_image' => (isset($settings['react_download_apps_image']))  ? $settings['react_download_apps_image'] : null,
-            'react_download_apps_image_full_url' => Helpers::get_full_url('react_download_apps_image', (isset($settings['react_download_apps_image']))  ? $settings['react_download_apps_image'] : null, isset($settings['react_download_apps_image_storage'])   ? $settings['react_download_apps_image_storage'] : 'public'),
-            'react_download_apps_title' => (isset($settings['react_download_apps_title']))  ? $settings['react_download_apps_title'] : null,
-            'react_download_apps_tag' => (isset($settings['react_download_apps_tag']))  ? $settings['react_download_apps_tag'] : null,
-            'react_download_apps_sub_title' => (isset($settings['react_download_apps_sub_title']))  ? $settings['react_download_apps_sub_title'] : null,
-            'react_download_apps_app_store' => (isset($settings['react_download_apps_link_data']))  ? json_decode($settings['react_download_apps_link_data'], true) : [],
+            'react_download_apps_banner_image' => $settings['react_download_apps_banner_image'] ?? null,
+            'react_download_apps_banner_image_full_url' => Helpers::get_full_url('react_download_apps_image', $settings['react_download_apps_banner_image'] ?? null, $settings['react_download_apps_banner_image_storage'] ?? 'public'),
+            'react_download_apps_image' => $settings['react_download_apps_image'] ?? null,
+            'react_download_apps_image_full_url' => Helpers::get_full_url('react_download_apps_image', $settings['react_download_apps_image'] ?? null, $settings['react_download_apps_image_storage'] ?? 'public'),
+            'react_download_apps_title' => $settings['react_download_apps_title'] ?? null,
+            'react_download_apps_tag' => $settings['react_download_apps_tag'] ?? null,
+            'react_download_apps_sub_title' => $settings['react_download_apps_sub_title'] ?? null,
+            'react_download_apps_app_store' => json_decode($settings['react_download_apps_link_data'] ?? '[]', true),
             'react_download_apps_play_store' => [
-                'react_download_apps_play_store_link' => (isset($settings['react_download_apps_button_name']))  ? $settings['react_download_apps_button_name'] : null,
-                'react_download_apps_play_store_status' => (int) (isset($settings['react_download_apps_button_status']))  ? $settings['react_download_apps_button_status'] : 0,
+                'react_download_apps_play_store_link' => $settings['react_download_apps_button_name'] ?? null,
+                'react_download_apps_play_store_status' => (int) ($settings['react_download_apps_button_status'] ?? 0),
             ],
-
         ];
 
+        // Prepare the final response data
+        $responseData = [
+            'base_urls' => [
+                'react_header_image_url' => dynamicStorage('storage/app/public/react_header'),
+                'react_services_image_url' => dynamicStorage('storage/app/public/react_service_image'),
+                'react_promotional_banner_image_url' => dynamicStorage('storage/app/public/react_promotional_banner'),
+                'react_delivery_section_image_url' => dynamicStorage('storage/app/public/react_delivery_section_image'),
+                'react_restaurant_section_image_url' => dynamicStorage('storage/app/public/react_restaurant_section_image'),
+                'react_download_apps_banner_image_url' => dynamicStorage('storage/app/public/react_download_apps_image'),
+                'react_download_apps_image_url' => dynamicStorage('storage/app/public/react_download_apps_image'),
+            ],
 
+            'react_header_title' => $settings['react_header_title'] ?? null,
+            'react_header_sub_title' => $settings['react_header_sub_title'] ?? null,
+            'react_header_image' => $settings['react_header_image'] ?? null,
+            'react_header_image_full_url' => Helpers::get_full_url('react_header', $settings['react_header_image'] ?? null, $settings['react_header_image_storage'] ?? 'public'),
 
-        return  response()->json(
-            [
-                'base_urls' => [
-                    'react_header_image_url' => dynamicStorage('storage/app/public/react_header'),
-                    'react_services_image_url' => dynamicStorage('storage/app/public/react_service_image'),
-                    'react_promotional_banner_image_url' => dynamicStorage('storage/app/public/react_promotional_banner'),
-                    'react_delivery_section_image_url' => dynamicStorage('storage/app/public/react_delivery_section_image'),
-                    'react_restaurant_section_image_url' => dynamicStorage('storage/app/public/react_restaurant_section_image'),
-                    'react_download_apps_banner_image_url' => dynamicStorage('storage/app/public/react_download_apps_image'),
-                    'react_download_apps_image_url' => dynamicStorage('storage/app/public/react_download_apps_image'),
-                ],
+            'react_services' => $services ?? [],
+            'react_promotional_banner' => $ReactPromotionalBanner ?? [],
 
-                'react_header_title' => (isset($settings['react_header_title']))  ? $settings['react_header_title'] : null,
-                'react_header_sub_title' => (isset($settings['react_header_sub_title']))  ? $settings['react_header_sub_title'] : null,
-                'react_header_image' => (isset($settings['react_header_image']))  ? $settings['react_header_image'] : null,
-                'react_header_image_full_url' => Helpers::get_full_url('react_header', (isset($settings['react_header_image']))  ? $settings['react_header_image'] : null, isset($settings['react_header_image_storage'])   ? $settings['react_header_image_storage'] : 'public'),
+            'restaurant_section' => $restaurant_section,
+            'delivery_section' => $delivery_section,
+            'download_app_section' => $download_app_section,
 
-                'react_services' => $services ?? [],
-                'react_promotional_banner' => $ReactPromotionalBanner ?? [],
+            'news_letter_sub_title' => $settings['news_letter_sub_title'] ?? null,
+            'news_letter_title' => $settings['news_letter_title'] ?? null,
+            'footer_data' => $settings['footer_data'] ?? null,
+        ];
 
-                'restaurant_section' => $restaurant_section,
-                'delivery_section' => $delivery_section,
-                'download_app_section' => $download_app_section,
+        // Cache the response data for an hour
+        cache()->put($cacheKey, $responseData, 60 * 60);
 
-                'news_letter_sub_title' => (isset($settings['news_letter_sub_title']))  ? $settings['news_letter_sub_title'] : null,
-                'news_letter_title' => (isset($settings['news_letter_title']))  ? $settings['news_letter_title'] : null,
-                'footer_data' => (isset($settings['footer_data']))  ? $settings['footer_data'] : null,
-            ]
-        );
+        return response()->json($responseData);
     }
+
 
     private function getPaymentMethods()
     {
@@ -610,7 +743,7 @@ class ConfigController extends Controller
             return [];
         }
 
-        $methods = DB::table('addon_settings')->where('is_active', 1)->whereIn('settings_type', ['payment_config'])->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago'])->get();
+        $methods = DB::table('addon_settings')->where('is_active', 1)->whereIn('settings_type', ['payment_config'])->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago','authorize_pay'])->get();
         $env = env('APP_ENV') == 'live' ? 'live' : 'test';
         $credentials = $env . '_values';
 

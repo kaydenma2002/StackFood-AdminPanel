@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SslCommerzPaymentController;
 use App\Http\Controllers\StripePaymentController;
+use App\Http\Controllers\AuthorizePaymentController;
 use App\Http\Controllers\PaymobController;
 use App\Http\Controllers\FlutterwaveV3Controller;
 use App\Http\Controllers\PaytmController;
@@ -102,6 +103,12 @@ if (!$is_published) {
             Route::get('pay', [StripePaymentController::class, 'index'])->name('pay');
             Route::get('token', [StripePaymentController::class, 'payment_process_3d'])->name('token')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
             Route::get('success', [StripePaymentController::class, 'success'])->name('success')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+        });
+        //Authorize.Net
+        Route::group(['prefix' => 'authorize', 'as' => 'authorize.'], function () {
+            Route::get('pay', [AuthorizePaymentController::class, 'index'])->name('pay');
+            Route::get('token', [AuthorizePaymentController::class, 'payment_process_3d'])->name('token')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::get('success', [AuthorizePaymentController::class, 'success'])->name('success')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
         });
 
         //RAZOR-PAY

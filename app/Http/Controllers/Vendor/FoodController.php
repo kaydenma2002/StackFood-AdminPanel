@@ -233,10 +233,9 @@ class FoodController extends Controller
             Toastr::warning(translate('messages.permission_denied'));
             return back();
         }
-
         $product = Food::withoutGlobalScope('translate')->findOrFail($id);
         $product_category = json_decode($product->category_ids);
-        $categories = Category::where(['parent_id' => 0])->get();
+        $categories = Category::where(['id' => $id])->get();
         return view('vendor-views.product.edit', compact('product', 'product_category', 'categories'));
     }
 

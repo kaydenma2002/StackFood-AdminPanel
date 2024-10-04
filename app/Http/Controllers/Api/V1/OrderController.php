@@ -43,6 +43,7 @@ class OrderController extends Controller
 {
     public function track_order(Request $request)
     {
+
         $validator = Validator::make($request->all(), [
             'order_id' => 'required',
             'guest_id' => $request->user ? 'nullable' : 'required',
@@ -52,6 +53,7 @@ class OrderController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
+
         $user_id = $request->user ? $request->user->id : $request['guest_id'];
 
         $order = Order::with(['restaurant','restaurant.restaurant_sub', 'refund', 'delivery_man', 'delivery_man.rating','subscription','payments'])->withCount('details')->where(['id' => $request['order_id'], 'user_id' => $user_id])
@@ -61,7 +63,9 @@ class OrderController extends Controller
         ->Notpos()->first();
 
         if($order){
+
             $order['restaurant'] = $order['restaurant'] ? Helpers::restaurant_data_formatting($order['restaurant']): $order['restaurant'];
+
             $order['delivery_address'] = $order['delivery_address']?json_decode($order['delivery_address'],true):$order['delivery_address'];
             $order['delivery_man'] = $order['delivery_man']?Helpers::deliverymen_data_formatting([$order['delivery_man']]):$order['delivery_man'];
             $order['offline_payment'] =  isset($order->offline_payments) ? Helpers::offline_payment_formater($order->offline_payments) : null;
@@ -82,7 +86,8 @@ class OrderController extends Controller
                 ]
             ], 404);
         }
-        return response()->json($order, 200);
+        $orderArray = json_decode(json_encode($order), true);
+        return response()->json($orderArray, 200);
     }
 
     public function place_order(Request $request)
@@ -196,7 +201,7 @@ class OrderController extends Controller
                 ]
             ], 406);
         }
-        $restaurant = Restaurant::with(['discount', 'restaurant_sub'])->selectRaw('*, IF(((select count(*) from `restaurant_schedule` where `restaurants`.`restaurant_id` = `restaurant_schedule`.`restaurant_id` and `restaurant_schedule`.`day` = '.$schedule_at->format('w').' and `restaurant_schedule`.`opening_time` < "'.$schedule_at->format('H:i:s').'" and `restaurant_schedule`.`closing_time` >"'.$schedule_at->format('H:i:s').'") > 0), true, false) as open')->where('id', $request->restaurant_id)->first();
+        $restaurant = Restaurant::with(['discount', 'restaurant_sub'])->selectRaw('*, IF(((select count(*) from `restaurant_schedule` where `restaurants`.`restaurant_id` = `restaurant_schedule`.`restaurant_id` and `restaurant_schedule`.`day` = '.$schedule_at->format('w').' and `restaurant_schedule`.`opening_time` < "'.$schedule_at->format('H:i:s').'" and `restaurant_schedule`.`closing_time` >"'.$schedule_at->format('H:i:s').'") > 0), true, false) as open')->where('restaurant_id', $request->restaurant_id)->first();
 
         if(!$restaurant) {
             return response()->json([
@@ -243,6 +248,7 @@ class OrderController extends Controller
         }
 
         $instant_order = BusinessSetting::where('key', 'instant_order')->first()?->value;
+
         if(($instant_order != 1 || $restaurant->restaurant_config?->instant_order != 1) && !$request->schedule_at && !$request->subscription_order){
             return response()->json([
                 'errors' => [
@@ -517,7 +523,7 @@ class OrderController extends Controller
 
                 $product_variations = json_decode($product->variations, true);
                 $variations=[];
-                if (count($product_variations)) {
+                if (is_array($product_variations) && count($product_variations)) {
                     $variation_data = Helpers::get_varient($product_variations, $c['variations']);
                     $price = $product['price'] + $variation_data['price'];
                     $variations = $variation_data['variations'];
@@ -902,15 +908,17 @@ class OrderController extends Controller
 
     public function get_running_orders(Request $request)
     {
+
         $validator = Validator::make($request->all(), [
             'limit' => 'required',
             'offset' => 'required',
-            'guest_id' => $request->user ? 'nullable' : 'required',
+
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
+
         $user_id = $request->user ? $request->user->id : $request['guest_id'];
 
         $paginator = Order::with(['restaurant', 'delivery_man.rating'])->withCount('details')->where(['user_id' => $user_id])
@@ -919,24 +927,29 @@ class OrderController extends Controller
         ->when(!isset($request->user) , function($query){
             $query->where('is_guest' , 1);
         })
-
         ->when(isset($request->user)  , function($query){
             $query->where('is_guest' , 0);
         })
         ->Notpos()->latest()->paginate($request['limit'], ['*'], 'page', $request['offset']);
 
         $orders = array_map(function ($data) {
+
             $data['delivery_address'] = $data['delivery_address']?json_decode($data['delivery_address']):$data['delivery_address'];
+
             $data['restaurant'] = $data['restaurant']?Helpers::restaurant_data_formatting($data['restaurant']):$data['restaurant'];
+
             $data['delivery_man'] = $data['delivery_man']?Helpers::deliverymen_data_formatting([$data['delivery_man']]):$data['delivery_man'];
+
             return $data;
         }, $paginator->items());
+
         $data = [
             'total_size' => $paginator->total(),
             'limit' => $request['limit'],
             'offset' => $request['offset'],
             'orders' => $orders
         ];
+
         return response()->json($data, 200);
     }
 

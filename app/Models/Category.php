@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Category extends Model
 {
     use HasFactory;
-    protected $with = ['storage'];
+    protected $with = ['storage','parent'];
     protected $casts = [
         'parent_id' => 'integer',
         'position' => 'integer',
@@ -21,6 +21,7 @@ class Category extends Model
         'products_count' => 'integer',
         'childes_count' => 'integer',
     ];
+
     protected $appends = ['image_full_url'];
 
     public function getImageFullUrlAttribute(){

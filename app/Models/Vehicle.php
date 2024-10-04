@@ -9,6 +9,7 @@ class Vehicle extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
+
     protected $casts = [
         'id' => 'integer',
         'status' => 'integer',

@@ -9,155 +9,92 @@ use Illuminate\Support\Facades\DB;
 class RestaurantLogic
 {
     public static function get_restaurants(array $additional_data)
-    {
-        $all_restaurant_default_status = \App\Models\BusinessSetting::where('key', 'all_restaurant_default_status')->first();
-        $all_restaurant_default_status = $all_restaurant_default_status ? $all_restaurant_default_status->value : 1;
-        $all_restaurant_sort_by_general = \App\Models\PriorityList::where('name', 'all_restaurant_sort_by_general')->where('type', 'general')->first();
-        $all_restaurant_sort_by_general = $all_restaurant_sort_by_general ? $all_restaurant_sort_by_general->value : '';
-        $all_restaurant_sort_by_unavailable = \App\Models\PriorityList::where('name', 'all_restaurant_sort_by_unavailable')->where('type', 'unavailable')->first();
-        $all_restaurant_sort_by_unavailable = $all_restaurant_sort_by_unavailable ? $all_restaurant_sort_by_unavailable->value : '';
-        $all_restaurant_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'all_restaurant_sort_by_temp_closed')->where('type', 'temp_closed')->first();
-        $all_restaurant_sort_by_temp_closed = $all_restaurant_sort_by_temp_closed ? $all_restaurant_sort_by_temp_closed->value : '';
-        $key = explode(' ', $additional_data['name']);
-        $query = Restaurant::withOpen($additional_data['longitude'], $additional_data['latitude'])
-            ->with(['discount' => function ($q) {
-                return $q->validate();
-            }])
-            ->whereIn('zone_id', $additional_data['zone_id'])
-            ->withcount('foods')
-            ->withcount('reviews_comments')
+{
 
-            ->when($additional_data['filter'] == 'delivery', function ($q) {
-                return $q->delivery();
-            })
-            ->when($additional_data['filter'] == 'take_away', function ($q) {
-                return $q->takeaway();
-            })
+    // Fetch sort and filter configurations
+    $all_restaurant_default_status = \App\Models\BusinessSetting::where('key', 'all_restaurant_default_status')->value('value') ?? 1;
+    $all_restaurant_sort_by_general = \App\Models\PriorityList::where('name', 'all_restaurant_sort_by_general')->where('type', 'general')->value('value') ?? '';
+    $all_restaurant_sort_by_unavailable = \App\Models\PriorityList::where('name', 'all_restaurant_sort_by_unavailable')->where('type', 'unavailable')->value('value') ?? '';
+    $all_restaurant_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'all_restaurant_sort_by_temp_closed')->where('type', 'temp_closed')->value('value') ?? '';
 
-            ->when($additional_data['avg_rating'] > 0, function ($query) use ($additional_data) {
-                $query->selectSub(function ($query) use ($additional_data) {
-                    $query->selectRaw('AVG(reviews.rating)')
-                        ->from('reviews')
-                        ->join('food', 'food.id', '=', 'reviews.food_id')
-                        ->whereColumn('food.restaurant_id', 'restaurants.restaurant_id')
-                        ->groupBy('food.restaurant_id')
-                        ->havingRaw('AVG(reviews.rating) >= ?', [$additional_data['avg_rating']]);
-                }, 'avg_r')->having('avg_r', '>=', $additional_data['avg_rating']);
-            })
-            ->when(isset($additional_data['veg'])   && $additional_data['veg'] == 1, function ($query) {
-                $query->where('veg', 1);
-            })
-            ->when(isset($additional_data['non_veg']) && $additional_data['non_veg'] == 1, function ($query) {
-                $query->where('non_veg', 1);
-            })
+    // Build the search query using Meilisearch
+    $searchQuery = Restaurant::search($additional_data['name'] ?? '');
 
-            ->when(isset($additional_data['delivery']) && $additional_data['delivery'] == 1, function ($query) {
-                return $query->delivery();
-            })
-            ->when(isset($additional_data['takeaway']) && $additional_data['takeaway'] == 1, function ($query) {
-                return $query->takeaway();
-            })
+    // Apply filters
+    $searchQuery->whereIn('zone_id', $additional_data['zone_id'] ?? []);
 
-            ->when(isset($additional_data['discount'])  && $additional_data['discount'] == 1, function ($query) {
-                $query->whereHas('discount', function ($query) {
-                    return $query->validate();
-                });
-            })
-            ->when(isset($additional_data['top_rated']) && $additional_data['top_rated'] == 1, function ($query) {
-                $query->selectSub(function ($query) {
-                    $query->selectRaw('AVG(reviews.rating)')
-                        ->from('reviews')
-                        ->join('food', 'food.id', '=', 'reviews.food_id')
-                        ->whereColumn('food.restaurant_id', 'restaurants.restaurant_id')
-                        ->groupBy('food.restaurant_id')
-                        ->havingRaw('AVG(reviews.rating) > ?', [3]);
-                }, 'avg_r')->having('avg_r', '>=', 3);
-            })
-            ->Active()
-            ->type($additional_data['type'])
-            ->cuisine($additional_data['cuisine'])
+    if ($additional_data['filter'] === 'delivery') {
+        $searchQuery->where('delivery', 1);
+    }
 
-            ->when($additional_data['filter'] == 'latest', function ($q) {
-                return $q->latest();
-            })
-            ->when($additional_data['filter'] == 'popular', function ($q) {
-                return $q->withCount('orders')
-                    ->orderBy('open', 'desc')
-                    ->orderBy('orders_count', 'desc');
-            })
-            // ->when($additional_data['filter']  !='popular' && $additional_data['filter']  !='latest', function($q){
-            //     return $q->withCount('orders')
-            //     ->orderBy('open', 'desc')
-            //     ->orderBy('distance');
-            // })
+    if ($additional_data['filter'] === 'take_away') {
+        $searchQuery->where('takeaway', 1);
+    }
 
-            ->when(isset($key), function ($query) use ($key) {
-                $query->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->Where('name', 'like', "%{$value}%");
-                    }
-                    $q->orWhereHas('translations', function ($query) use ($key) {
-                        foreach ($key as $value) {
-                            $query->where('translationable_type', 'App\Models\Restaurant')->where('key', 'name')->where('value', 'like', "%{$value}%");
-                        };
-                    });
-                    $q->orWhereHas('tags', function ($query) use ($key) {
-                        foreach ($key as $value) {
-                            $query->where('tag', 'like', "%{$value}%");
-                        };
-                    });
-                });
-            });
+    if ($additional_data['avg_rating'] > 0) {
+        $searchQuery->where('avg_rating', '>=', $additional_data['avg_rating']);
+    }
 
-        if ($all_restaurant_default_status == '1') {
-            $query = $query->withCount('orders')->orderBy('open', 'desc')->orderBy('orders_count', 'desc');
-        } else {
+    if (isset($additional_data['veg']) && $additional_data['veg'] == 1) {
+        $searchQuery->where('veg', 1);
+    }
 
-            if ($all_restaurant_sort_by_temp_closed == 'remove') {
-                $query = $query->where('active', '>', 0);
-            } elseif ($all_restaurant_sort_by_temp_closed == 'last') {
-                $query = $query->orderByDesc('active');
-            }
+    if (isset($additional_data['non_veg']) && $additional_data['non_veg'] == 1) {
+        $searchQuery->where('non_veg', 1);
+    }
 
-            if ($all_restaurant_sort_by_unavailable == 'remove') {
-                $query = $query->having('open', '>', 0);
-            } elseif ($all_restaurant_sort_by_unavailable == 'last') {
-                $query = $query->orderBy('open', 'desc');
-            }
+    if (isset($additional_data['discount']) && $additional_data['discount'] == 1) {
+        $searchQuery->where('discount', 1);
+    }
 
-            if ($all_restaurant_sort_by_general == 'latest_created') {
-                $query = $query->latest();
-            } elseif ($all_restaurant_sort_by_general == 'nearest_first') {
-                $query = $query->orderBy('distance');
-            } elseif ($all_restaurant_sort_by_general == 'rating') {
-                $query = $query->selectSub(function ($query) {
-                    $query->selectRaw('AVG(reviews.rating)')
-                        ->from('reviews')
-                        ->join('food', 'food.id', '=', 'reviews.food_id')
-                        ->whereColumn('food.restaurant_id', 'restaurants.restaurant_id')
-                        ->groupBy('food.restaurant_id');
-                }, 'avg_r')->orderBy('avg_r', 'desc');
-            } elseif ($all_restaurant_sort_by_general == 'review_count') {
-                $query = $query->withCount('reviews')->orderBy('reviews_count', 'desc');
-            } elseif ($all_restaurant_sort_by_general == 'order_count') {
-                $query = $query->withCount('orders')->orderBy('orders_count', 'desc');
-            } elseif ($all_restaurant_sort_by_general == 'a_to_z') {
-                $query = $query->orderBy('name');
-            } elseif ($all_restaurant_sort_by_general == 'z_to_a') {
-                $query = $query->orderByDesc('name');
-            }
+    // Sorting
+    if ($all_restaurant_default_status == '1') {
+        $searchQuery->orderBy('open', 'desc')->orderBy('orders_count', 'desc');
+    } else {
+        if ($all_restaurant_sort_by_temp_closed == 'remove') {
+            $searchQuery->where('active', '>', 0);
+        } elseif ($all_restaurant_sort_by_temp_closed == 'last') {
+            $searchQuery->orderByDesc('active');
         }
 
-        $paginator = $query->paginate($additional_data['limit'], ['*'], 'page', $additional_data['offset']);
+        if ($all_restaurant_sort_by_unavailable == 'remove') {
+            $searchQuery->where('open', '>', 0);
+        } elseif ($all_restaurant_sort_by_unavailable == 'last') {
+            $searchQuery->orderBy('open', 'desc');
+        }
 
-        return [
-            'filter_data' => $additional_data['filter']  ?? null,
-            'total_size' => $paginator->total(),
-            'limit' => $additional_data['limit'],
-            'offset' => $additional_data['offset'],
-            'restaurants' => $paginator->items()
-        ];
+        if ($all_restaurant_sort_by_general == 'latest_created') {
+            $searchQuery->orderBy('created_at', 'desc');
+        } elseif ($all_restaurant_sort_by_general == 'nearest_first') {
+            $searchQuery->orderBy('distance', 'asc');
+        } elseif ($all_restaurant_sort_by_general == 'rating') {
+            $searchQuery->orderBy('avg_rating', 'desc');
+        } elseif ($all_restaurant_sort_by_general == 'review_count') {
+            $searchQuery->orderBy('reviews_count', 'desc');
+        } elseif ($all_restaurant_sort_by_general == 'order_count') {
+            $searchQuery->orderBy('orders_count', 'desc');
+        } elseif ($all_restaurant_sort_by_general == 'a_to_z') {
+            $searchQuery->orderBy('name', 'asc');
+        } elseif ($all_restaurant_sort_by_general == 'z_to_a') {
+            $searchQuery->orderBy('name', 'desc');
+        }
     }
+
+    // Ensure 'offset' is an integer
+    $page = isset($additional_data['offset']) ? (int)$additional_data['offset'] : 1;
+
+    // Paginate the results
+    $paginator = $searchQuery->paginate($additional_data['limit'], 'page', $page);
+
+    return [
+        'filter_data' => $additional_data['filter'] ?? null,
+        'total_size' => $paginator->total(),
+        'limit' => $additional_data['limit'],
+        'offset' => $additional_data['offset'],
+        'restaurants' => $paginator->items(),
+    ];
+}
+
 
     public static function get_latest_restaurants(
         $zone_id,

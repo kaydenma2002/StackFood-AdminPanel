@@ -352,6 +352,14 @@ class UpdateController extends Controller
                         'username' => $decoded_value['username'],
                         'password' => $decoded_value['password'],
                     ];
+                }elseif ($gateway == 'authorize_pay') {
+                    $additional_data = [
+                        'status' => $decoded_value['status'],
+                        'app_key' => $decoded_value['api_key'],
+                        'app_secret' => $decoded_value['api_secret'],
+                        'username' => $decoded_value['username'],
+                        'password' => $decoded_value['password'],
+                    ];
                 }
 
             $credentials= json_encode(array_merge($data, $additional_data));

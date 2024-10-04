@@ -592,22 +592,41 @@ class ProductLogic
         return $storage;
     }
 
-    public static function get_restaurant_popular_products($zone_id, $restaurant_id, $type='all',$name=null)
-    {
-        $products = Food::active()->type($type)->where('restaurant_id',$restaurant_id)->whereHas('restaurant', function($q)use($zone_id){
-            $q->whereIn('zone_id', $zone_id)->Weekday();
-        })->popular()
-        ->when(isset($name) , function($query)use($name){
-            $query->where(function ($q) use ($name) {
-                foreach ($name as $value) {
-                    $q->orWhere('name', 'like', "%{$value}%");
-                }
+    public static function get_restaurant_popular_products($zone_id, $restaurant_id, $type = 'all', $name = null)
+{
 
-            });
-        })
-        ->limit(50)->get();
-        return  $products;
-    }
+    $query = Food::search($name[0], function ($meilisearch, $query, $options) use ($restaurant_id, $zone_id, $type) {
+        $filters = [];
+
+        // Apply restaurant filter (cast restaurant_id to a string to handle both string and int)
+        $filters[] = 'restaurant_id = "' .  $restaurant_id . '"';
+
+        // Apply status filter
+        $filters[] = 'active = "' .  'true' . '"';
+
+        // Apply zone filter
+        if (is_array($zone_id)) {
+            $zoneFilters = implode(' OR ', array_map(fn($id) => "zone_id = $id", $zone_id));
+            $filters[] = "($zoneFilters)";
+        } else {
+            $filters[] = 'zone_id = ' . $zone_id;
+        }
+
+        // Apply type filter
+        if ($type !== 'all') {
+            $filters[] = 'veg = ' . ($type === 'veg' ? 1 : 0);
+        }
+
+        // Set filters and order
+        $options['filter'] = implode(' AND ', $filters);
+        //$options['sort'] = ['order_count:desc'];
+
+        return $meilisearch->search($query, $options);
+    })->take(50)->get();
+    return ['products' => $query];
+
+
+}
 
     public static function recommended_most_reviewed($zone_id,$restaurant_id=null, $limit = null, $offset = null, $type='all',$name =null )
     {
