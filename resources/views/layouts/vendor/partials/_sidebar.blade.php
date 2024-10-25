@@ -331,7 +331,51 @@
                             </li>
                         </ul>
                     </li>
+                    {{-- Order daily --}}
+                    <li class="navbar-vertical-aside-has-menu {{Request::is('restaurant-panel/order*') && (Request::is('restaurant-panel/order/subscription*') == false ) ?'active':''}}">
+                        <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:"
+                            title="Today's Orders">
+                            <i class="tio-shopping-cart nav-icon"></i>
+                            <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
+                                Today's Orders
+                            </span>
+                        </a>
 
+
+                        @php($data =0)
+                        @php($restaurant =\App\CentralLogics\Helpers::get_restaurant_data())
+                        @if (($restaurant->restaurant_model == 'subscription' && isset($restaurant->restaurant_sub) && $restaurant->restaurant_sub->self_delivery == 1)  || ($restaurant->restaurant_model == 'commission' && $restaurant->self_delivery_system == 1) )
+                        @php($data =1)
+                        @endif
+
+                        <ul class="js-navbar-vertical-aside-submenu nav nav-sub"
+                        style="display:  {{Request::is('restaurant-panel/order_daily*') && (Request::is('restaurant-panel/order/subscription*') == false )?'block':'none'}}">
+                            <li class="nav-item {{Request::is('restaurant-panel/order_daily/list')?'active':''}} @yield('all_order') ">
+                                <a class="nav-link" href="{{route('vendor.order_daily.list')}}" title="Today's Order">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate sidebar--badge-container">
+                                        {{translate('messages.all')}}
+                                        <span class="badge badge-soft-info badge-pill ml-1">
+                                            {{ \App\Models\Order::where('restaurant_id', \App\CentralLogics\Helpers::get_restaurant_id())
+                                            ->whereDate('created_at', now()->toDateString()) // Filter orders for today only
+                                            ->where(function($query) use($data) {
+                                                $query->whereNotIn('order_status', (config('order_confirmation_model') == 'restaurant' || $data)
+                                                    ? ['failed', 'canceled', 'refund_requested', 'refunded']
+                                                    : ['pending', 'failed', 'canceled', 'refund_requested', 'refunded'])
+                                                ->orWhere(function($query) {
+                                                    return $query->where('order_status', 'pending')->where('order_type', 'take_away');
+                                                });
+                                            })
+                                            ->Notpos()
+                                            ->HasSubscriptionToday()
+                                            ->NotDigitalOrder()
+                                            ->count() }}
+                                        </span>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                     {{-- @if ($restaurant->order_subscription_active == 1 || (\App\Models\Order::where('restaurant_id', \App\CentralLogics\Helpers::get_restaurant_id())->whereNotNull('subscription_id')->count() > 0 )) --}}
                     <li class="navbar-vertical-aside-has-menu {{ Request::is('restaurant-panel/order/subscription*') ? 'active' : '' }}">
                         <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('vendor.order.subscription.index') }}" title="{{ translate('messages.order_subscriptiona') }}">
@@ -342,7 +386,7 @@
                     </li>
                     {{-- @endif --}}
 
-                    <!-- End Order -->
+                    <!-- End Order daily-->
                     @endif
                     <li class="nav-item">
                         <small

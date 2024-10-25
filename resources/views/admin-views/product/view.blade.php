@@ -303,9 +303,21 @@ $reviewsInfo = $product->rating()->first();
                                     @endif
                                 </td>
                                 <td class="px-4">
-                                    @foreach(\App\Models\AddOn::withOutGlobalScope(App\Scopes\RestaurantScope::class)->whereIn('id',json_decode($product['add_ons'],true))->get() as $addon)
+                                    @php
+                                        // Decode 'add_ons' safely, default to an empty array if null or invalid
+                                        $addOnIds = json_decode($product['add_ons'], true) ?? [];
+
+                                        // Fetch the add-ons only if there are valid IDs
+                                        $addons = !empty($addOnIds)
+                                            ? \App\Models\AddOn::withOutGlobalScope(App\Scopes\RestaurantScope::class)
+                                                ->whereIn('id', $addOnIds)
+                                                ->get()
+                                            : collect(); // Return an empty collection if no add-ons
+                                    @endphp
+
+                                    @foreach($addons as $addon)
                                         <span class="d-block text-capitalize">
-                                        {{$addon['name']}} : <strong>{{\App\CentralLogics\Helpers::format_currency($addon['price'])}}</strong>
+                                            {{ $addon['name'] }} : <strong>{{ \App\CentralLogics\Helpers::format_currency($addon['price']) }}</strong>
                                         </span>
                                     @endforeach
                                 </td>

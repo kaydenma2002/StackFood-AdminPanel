@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
+
 use Illuminate\Support\Facades\Log;
 
 use App\Exports\DisbursementHistoryExport;
@@ -680,18 +681,35 @@ class VendorController extends Controller
                         ->whereColumn('restaurants.vendor_id', 'vendors.id')
                         ->where(function ($query) use ($searchTerm) {
                             $query->orWhere('vendors.f_name', 'like', "%{$searchTerm}%")
-                                  ->orWhere('vendors.l_name', 'like', "%{$searchTerm}%")
-                                  ->orWhere('vendors.email', 'like', "%{$searchTerm}%")
-                                  ->orWhere('vendors.phone', 'like', "%{$searchTerm}%");
+                                ->orWhere('vendors.l_name', 'like', "%{$searchTerm}%")
+                                ->orWhere('vendors.email', 'like', "%{$searchTerm}%")
+                                ->orWhere('vendors.phone', 'like', "%{$searchTerm}%");
                         });
                 })
-                ->orWhere(function ($query) use ($searchTerm) {
-                    $query->orWhere('restaurants.name', 'like', "%{$searchTerm}%")
-                          ->orWhere('restaurants.email', 'like', "%{$searchTerm}%")
-                          ->orWhere('restaurants.phone', 'like', "%{$searchTerm}%");
-                });
-            })
-            ->orderBy('restaurants.created_at', 'desc')
+                    ->orWhere(function ($query) use ($searchTerm) {
+                        $query->orWhere('restaurants.name', 'like', "%{$searchTerm}%")
+                            ->orWhere('restaurants.email', 'like', "%{$searchTerm}%")
+                            ->orWhere('restaurants.phone', 'like', "%{$searchTerm}%");
+                    });
+            });
+
+        // Apply the zone filter if provided
+        if (is_numeric($zone_id)) {
+            $restaurants->where('restaurants.zone_id', $zone_id);
+        }
+
+        // Apply the cuisine filter if provided and not 'all'
+        if ($cuisine_id !== 'all') {
+            $restaurants->where('restaurants.cuisine_id', $cuisine_id);
+        }
+
+        // Apply the type filter if provided and not 'all'
+        if ($type !== 'all') {
+            $restaurants->where('restaurants.type', $type);
+        }
+
+        // Order by created_at and paginate
+        $restaurants = $restaurants->orderBy('restaurants.created_at', 'desc')
             ->paginate(config('default_pagination'));
 
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
@@ -817,14 +835,14 @@ class VendorController extends Controller
         $zone_ids = isset($request->zone_ids) ? (count($request->zone_ids) > 0 ? $request->zone_ids : []) : 0;
         $zone_id = $request->zone_id ??  null;
         $data = Category::where('name', 'like', '%' . $request->q . '%')
-        ->limit(10)
-        ->get()
-        ->map(function ($category) {
-            return [
-                'id' => $category->id,
-                'text' => $category->name,
-            ];
-        });
+            ->limit(10)
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'text' => $category->name,
+                ];
+            });
 
         if (isset($request->all)) {
             $data[] = (object)['id' => 'all', 'text' => 'All'];

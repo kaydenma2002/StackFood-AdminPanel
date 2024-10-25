@@ -73,6 +73,19 @@
 <main id="content" role="main" class="main pointer-event">
     <!-- Content -->
 @yield('content')
+<div class="modal fade" id="newOrderModal" tabindex="-1" aria-labelledby="newOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newOrderModalLabel">New Order Received</h5>
+
+            </div>
+            <div class="modal-body">
+                <p>A new order has been placed. <a href="{{ route('vendor.order_daily.list') }}" class="text-primary">View Order</a></p>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- End Content -->
 
     <!-- Footer -->
@@ -230,9 +243,36 @@
     }
 </script>
 <script src="{{dynamicAsset('public/assets/admin/js/firebase.min.js')}}"></script>
+<script src="https://js.pusher.com/7.0/pusher.min.js"></script>
 
 <!-- JS Implementing Plugins -->
+<script>
+    // Initialize Pusher
 
+    const pusher = new Pusher("{{ env('PUSHER_APP_KEY') }}", {
+        cluster: "{{ env('PUSHER_APP_CLUSTER') }}",
+
+    });
+
+    const pusherAppKey = "{{ env('PUSHER_APP_KEY') }}";
+    const pusherCluster = "{{ env('PUSHER_APP_CLUSTER') }}";
+
+    const channel = pusher.subscribe('orders');
+
+    // Listen for the 'order.placed' event
+    channel.bind('order.placed', function(data) {
+
+        // Show the modal notification for a new order
+        $('#newOrderModal').modal('show');
+    });
+    function closeModal() {
+    var modal = document.getElementById('newOrderModal');
+    var bootstrapModal = bootstrap.Modal.getInstance(modal); // Get the modal instance
+    bootstrapModal.hide(); // Hide the modal
+    }
+</script>
+
+{!! Toastr::message() !!}
 @stack('script')
 <script src="{{dynamicAsset('public/assets/admin/js/vendor.min.js')}}"></script>
 <script src="{{dynamicAsset('public/assets/admin/js/theme.min.js')}}"></script>

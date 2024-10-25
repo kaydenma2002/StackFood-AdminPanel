@@ -4,7 +4,7 @@
         <div class="chat-user-info w-100 d-flex align-items-center">
             <div class="chat-user-info-img">
                 <img class="avatar avatar-lg mr-3 onerror-image"
-                     src="{{ $food['image_full_url'] ?? dynamicAsset('public/assets/admin/img/100x100/food-default-image.png') }}"
+                     src="{{ asset('storage/product/' . $food['image']) }} ?? dynamicAsset('public/assets/admin/img/100x100/food-default-image.png') }}"
                      data-onerror-image="{{dynamicAsset('public/assets/admin/img/100x100/food-default-image.png')}}" alt="{{$food->name}} image">
             </div>
             <div class="chat-user-info-content">
@@ -62,8 +62,7 @@
     </div>
     <!-- Body -->
 </div>
-<script src="{{dynamicAsset('public/assets/admin')}}/js/view-pages/common.js"></script>
-<script>
+<script src="{{dynamicAsset('public/assets/admin')}}/js/view-pages/common.js"></script><script>
     "use strict";
     $(document).ready(function () {
         $('.scroll-down').animate({

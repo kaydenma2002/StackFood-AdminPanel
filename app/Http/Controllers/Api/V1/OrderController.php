@@ -38,7 +38,7 @@ use App\Models\VariationOption;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use MatanYadaev\EloquentSpatial\Objects\Point;
-
+use App\Events\OrderPlaced;
 class OrderController extends Controller
 {
     public function track_order(Request $request)
@@ -486,6 +486,7 @@ class OrderController extends Controller
                 $code = 'campaign';
             } else{
                 $product = Food::active()->find($c['item_id']);
+
                 $food_id = $c['item_id'];
                 $code = 'food';
             }
@@ -539,6 +540,7 @@ class OrderController extends Controller
                     'food_id' => $food_id ??  null,
                     'item_campaign_id' => $campaign_id ?? null,
                     'food_details' => json_encode($product),
+
                     'quantity' => $c['quantity'],
                     'price' => round($price, config('round_up_to_digit')),
                     'tax_amount' => Helpers::tax_calculate(food:$product, price:$price),
@@ -720,6 +722,8 @@ class OrderController extends Controller
             }
 
             $order->save();
+            event(new OrderPlaced($order));
+
             // new Order Subscription logs create for the order
             OrderLogic::create_subscription_log(id:$order->id);
             // End Order Subscription.

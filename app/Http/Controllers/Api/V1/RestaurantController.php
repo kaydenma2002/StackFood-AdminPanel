@@ -12,7 +12,7 @@ use App\Http\Controllers\Controller;
 use App\CentralLogics\RestaurantLogic;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
-
+use Illuminate\Support\Facades\Log;
 class RestaurantController extends Controller
 {
     public function get_restaurants(Request $request, $filter_data="all")
@@ -69,6 +69,8 @@ class RestaurantController extends Controller
         $latitude= $request->header('latitude');
         $zone_id= json_decode($request->header('zoneId'), true);
         $restaurants = RestaurantLogic::get_latest_restaurants(zone_id:$zone_id, limit:$request['limit'], offset:$request['offset'], type:$type ,longitude:$longitude,latitude:$latitude,veg:$request->veg ,non_veg:$request->non_veg, discount:$request->discount,top_rated: $request->top_rated);
+
+
         $restaurants['restaurants'] = Helpers::restaurant_data_formatting(data:$restaurants['restaurants'],multi_data: true );
 
         return response()->json($restaurants['restaurants'], 200);
@@ -239,43 +241,73 @@ class RestaurantController extends Controller
     }
 
 
-    public function get_recommended_restaurants(Request $request){
-        if (!$request->hasHeader('zoneId')) {
-            $errors = [];
-            array_push($errors, ['code' => 'zoneId', 'message' => translate('messages.zone_id_required')]);
-            return response()->json([
-                'errors' => $errors
-            ], 403);
-        }
-
-        $longitude = $request->header('longitude') ?? 0;
-        $latitude = $request->header('latitude') ?? 0;
-        $zone_id = json_decode($request->header('zoneId'), true);
-
-        // Generate a unique cache key
-        $cacheKey = 'recommended_restaurants_' . implode('_', $zone_id) . "_{$longitude}_{$latitude}";
-        $cacheDuration = 60; // Cache duration in minutes
-
-        // Cache the result for 60 minutes
-        $data = Cache::remember($cacheKey, $cacheDuration, function () use ($longitude, $latitude, $zone_id) {
-            return Restaurant::withOpen($longitude, $latitude)
-                ->withCount('foods')
-                ->with(['foods_for_reorder'])
-                ->active()
-                ->whereIn('zone_id', $zone_id)
-                ->orderBy('open', 'desc')
-                ->orderBy('distance', 'asc')
-                ->inRandomOrder()->limit(20)
-                ->get()
-                ->map(function ($data) {
-                    $data->foods = $data->foods_for_reorder->take(5);
-                    unset($data->foods_for_reorder);
-                    return $data;
-                });
-        });
-
-        return response()->json(Helpers::restaurant_data_formatting($data, true), 200);
+    public function get_recommended_restaurants(Request $request)
+{
+    // Validate the presence of zoneId in the headers
+    if (!$request->hasHeader('zoneId')) {
+        return response()->json([
+            'errors' => [['code' => 'zoneId', 'message' => translate('messages.zone_id_required')]]
+        ], 403);
     }
+
+    $longitude = $request->header('longitude') ?? 0;
+    $latitude = $request->header('latitude') ?? 0;
+    $zone_id = json_decode($request->header('zoneId'), true);
+
+    // Generate a unique cache key
+    $cacheKey = 'recommended_restaurants_' . implode('_', $zone_id) . "_{$longitude}_{$latitude}";
+    $cacheDuration = 60; // Cache duration in minutes
+
+    // Cache the result for 60 minutes
+    $data = Cache::remember($cacheKey, $cacheDuration, function () use ($longitude, $latitude, $zone_id) {
+        return Restaurant::withOpen($longitude, $latitude)
+            ->withCount('foods')
+            ->with(['foods_for_reorder'])
+            ->active()
+            ->whereIn('zone_id', $zone_id)
+            ->orderBy('open', 'desc')
+            ->orderBy('distance', 'asc')
+            ->inRandomOrder()->limit(20)
+            ->get()
+            ->map(function ($restaurant) {
+                // Handle the sell_count reset logic that was previously in the model
+                $this->handleDailyStockReset($restaurant);
+
+                $restaurant->foods = $restaurant->foods_for_reorder->take(5);
+                unset($restaurant->foods_for_reorder);
+                return $restaurant;
+            });
+    });
+
+    return response()->json(Helpers::restaurant_data_formatting($data, true), 200);
+}
+
+/**
+ * Handle the logic of resetting the sell_count for daily stock type foods.
+ */
+protected function handleDailyStockReset($restaurant)
+{
+    try {
+        // Access the orders count directly in the controller
+        $ordersCount = $restaurant->orders()->count();
+        $todayOrdersCount = $restaurant->orders()->whereDay('created_at', now())->count();
+
+        if ($ordersCount != 0 && $todayOrdersCount == 0 && $restaurant->stock_type == 'daily') {
+            // Reset sell_count for the restaurant
+            $restaurant->sell_count = 0;
+            $restaurant->save();
+
+            // Reset sell_count for variation options
+            $restaurant->newVariationOptions()->update([
+                'sell_count' => 0
+            ]);
+        }
+    } catch (\Exception $exception) {
+        // Log the exception details
+        info([$exception->getFile(), $exception->getLine(), $exception->getMessage()]);
+    }
+}
+
 
 
     public function get_visited_restaurants(Request $request){

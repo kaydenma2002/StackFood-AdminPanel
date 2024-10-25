@@ -256,7 +256,7 @@
                                             <a class="media align-items-center"
                                                 href="{{ route('admin.food.view', [$food['id']]) }}">
                                                 <img class="avatar avatar-lg mr-3 onerror-image"
-                                                     src="{{ $food['image_full_url'] }}"
+                                                     src="{{ asset('storage/product/' . $food['image']) }}"
                                                      alt="{{ $food->name }} image">
                                                 <div class="media-body">
                                                     <h5 class="text-hover-primary mb-0">{{ Str::limit($food['name'], 20, '...') }}
@@ -346,7 +346,7 @@
                                                 </div>
                                                 <div class="modal-body pt-2">
                                                     <div class="table-rest-info mb-30 align-items-start">
-                                                        <img src="{{ $food['image_full_url'] }}" class="w-80px">
+                                                        <img src="{{ asset('storage/product/' . $food['image']) }}" class="w-80px">
                                                         <div class="info fs-12 text-body">
                                                             <span class="d-block text-title fs-15 mb-2">
                                                                 {{ $food['name'] }}

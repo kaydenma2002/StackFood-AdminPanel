@@ -475,39 +475,33 @@ class FoodController extends Controller
 
     public function list(Request $request)
     {
-
-        $key = $request['search'];
+        $key = explode(' ', $request['search']);
         $restaurant_id = $request->query('restaurant_id', 'all');
         $category_id = $request->query('category_id', 'all');
         $type = $request->query('type', 'all');
-
-        // Perform the search using Meilisearch
-        $foodIds = Food::search($key)->get()->pluck('id');
-
-        // Now filter the results using Eloquent
-        $foods = Food::query()
-            ->withoutGlobalScope(RestaurantScope::class)
-            ->with(['restaurant', 'category.parent', 'orders', 'storage'])
-            ->whereIn('id', $foodIds)
-            ->when(is_numeric($restaurant_id), function ($query) use ($restaurant_id) {
-                return $query->where('restaurant_id', $restaurant_id);
-            })
-            ->when(is_numeric($category_id), function ($query) use ($category_id) {
-                return $query->whereHas('category', function ($q) use ($category_id) {
-                    return $q->whereId($category_id)->orWhere('parent_id', $category_id);
-                });
-            })
-            ->when($type !== 'all', function ($query) use ($type) {
-                return $query->where('type', $type);
-            })
-            ->latest()
-            ->paginate(config('default_pagination'));
-
-        $restaurant = $restaurant_id !== 'all' ? Restaurant::findOrFail($restaurant_id) : null;
-        $category = $category_id !== 'all' ? Category::with('translations')->findOrFail($category_id) : null;
-
-
-        return view('admin-views.product.list', compact('foods', 'restaurant', 'category', 'type'));
+        $foods = Food::withoutGlobalScope(RestaurantScope::class)
+        ->with(['restaurant','category.parent'])
+        ->when(is_numeric($restaurant_id), function($query)use($restaurant_id){
+            return $query->where('restaurant_id', $restaurant_id);
+        })
+        ->when(is_numeric($category_id), function($query)use($category_id){
+            return $query->whereHas('category',function($q)use($category_id){
+                return $q->whereId($category_id)->orWhere('parent_id', $category_id);
+            });
+        })
+        ->when(isset($key) , function($q) use($key) {
+            $q->where(function($q) use($key){
+                foreach ($key as $value) {
+                    $q->where('name', 'like', "%{$value}%");
+                }
+            });
+        })
+        ->type($type)
+        ->latest()
+        ->paginate(config('default_pagination'));
+        $restaurant =$restaurant_id !='all'? Restaurant::findOrFail($restaurant_id):null;
+        $category =$category_id !='all'? Category::with('translations')->findOrFail($category_id):null;
+        return view('admin-views.product.list', compact('foods','restaurant','category', 'type'));
     }
 
     public function search(Request $request)

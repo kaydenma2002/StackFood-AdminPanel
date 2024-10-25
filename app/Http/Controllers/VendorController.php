@@ -44,11 +44,11 @@ class VendorController extends Controller
     public function store(Request $request)
     {
         $status = BusinessSetting::where('key', 'toggle_restaurant_registration')->first();
-        if(!isset($status) || $status->value == '0')
-        {
-            Toastr::error(translate('messages.not_found'));
-            return back();
-        }
+        // if(!isset($status) || $status->value == '0')
+        // {
+        //     Toastr::error(translate('messages.not_found'));
+        //     return back();
+        // }
         $validator = Validator::make($request->all(), [
             'f_name' => 'required',
             'name' => 'required|max:191',
@@ -143,20 +143,28 @@ class VendorController extends Controller
             $vendor->save();
 
             $restaurant = new Restaurant;
-            $restaurant->name =  $request->name[array_search('default', $request->lang)];
+            do {
+                $restaurant_id = '1617' . mt_rand(1000000000, 9999999999); // Generates random number to ensure uniqueness
+            } while (Restaurant::where('restaurant_id', $restaurant_id)->exists());
+
+            $restaurant->restaurant_id = $restaurant_id;
+
+            // Assign other fields
+            $restaurant->name = $request->name[array_search('default', $request->lang)];
             $restaurant->phone = $request->phone;
             $restaurant->email = $request->email;
-            $restaurant->logo = Helpers::upload( dir:'restaurant/',  format:'png', image:  $request->file('logo'));
-            $restaurant->cover_photo = Helpers::upload( dir:'restaurant/cover/', format: 'png',  image: $request->file('cover_photo'));
+            $restaurant->logo = Helpers::upload(dir: 'restaurant/', format: 'png', image: $request->file('logo'));
+            $restaurant->cover_photo = Helpers::upload(dir: 'restaurant/cover/', format: 'png', image: $request->file('cover_photo'));
             $restaurant->address = $request->address[array_search('default', $request->lang)];
             $restaurant->latitude = $request->latitude;
             $restaurant->longitude = $request->longitude;
             $restaurant->vendor_id = $vendor->id;
             $restaurant->zone_id = $request->zone_id;
             $restaurant->tax = $request->tax;
-            $restaurant->delivery_time =$request->minimum_delivery_time .'-'. $request->maximum_delivery_time.'-'.$request->delivery_time_type;
+            $restaurant->delivery_time = $request->minimum_delivery_time . '-' . $request->maximum_delivery_time . '-' . $request->delivery_time_type;
             $restaurant->status = 0;
             $restaurant->restaurant_model = 'none';
+            $restaurant->save();
 
             if(isset($request->additional_data)  && count($request->additional_data) > 0){
                 $restaurant->additional_data = json_encode($request->additional_data) ;

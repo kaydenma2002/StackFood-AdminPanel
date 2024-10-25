@@ -3,7 +3,7 @@
         <td>{{$key+1}}</td>
         <td>
             <a class="media align-items-center" href="{{route('vendor.food.view',[$food['id']])}}">
-                <img class="avatar avatar-lg mr-3 onerror-image" src="{{ $food['image_full_url'] }}"
+                <img class="avatar avatar-lg mr-3 onerror-image" src="{{ asset('storage/product/' . $food['image']) }}"
                      data-onerror-image="{{dynamicAsset('public/assets/admin/img/100x100/food-default-image.png')}}" alt="{{$food->name}} image">
                 <div class="media-body">
                     <h5 class="text-hover-primary mb-0">{{Str::limit($food['name'],20,'...')}}</h5>

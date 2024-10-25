@@ -309,8 +309,8 @@ if($order->delivery_address){
                                                             <a class="avatar mr-3 cursor-pointer initial-80"
                                                                 href="{{ route('vendor.food.view', $detail->food['id']) }}">
                                                                 <img class="img-fluid rounded initial-80 onerror-image"
-                                                                     src="{{ $food['image_full_url'] ?? dynamicAsset('public/assets/admin/img/100x100/food-default-image.png') }}"
-                                                                     data-onerror-image="{{ dynamicAsset('public/assets/admin/img/160x160/img2.jpg') }}"
+                                                                     src="{{ asset('storage/product/' . $detail->food['image']) }}"
+
                                                                     alt="Image Description">
                                                             </a>
                                                             <div class="media-body">

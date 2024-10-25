@@ -18,11 +18,11 @@ class CustomerWalletController extends Controller
 {
     public function add_fund_view()
     {
-        if(BusinessSetting::where('key','wallet_status')->first()?->value != 1)
-        {
-            Toastr::error(translate('messages.customer_wallet_disable_warning_admin'));
-            return back();
-        }
+        // if(BusinessSetting::where('key','wallet_status')->first()?->value != 1)
+        // {
+        //     Toastr::error(translate('messages.customer_wallet_disable_warning_admin'));
+        //     return back();
+        // }
         return view('admin-views.customer.wallet.add_fund');
     }
 

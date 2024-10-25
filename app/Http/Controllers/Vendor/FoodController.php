@@ -284,7 +284,7 @@ class FoodController extends Controller
             'name' => 'array',
             'name.0' => 'required',
             'name.*' => 'max:191',
-            'category_id' => 'required',
+
             'price' => 'required|numeric|between:0.01,999999999999.99',
             'description.*' => 'max:1000',
             'discount' => 'required|numeric|min:0',

@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\ReportFilter;
 use Laravel\Scout\Searchable;
-use App\Jobs\CacheFoodOrders;
 
 class Food extends Model
 {
@@ -43,42 +42,49 @@ class Food extends Model
         'is_halal' => 'integer',
     ];
 
-    protected $appends = ['image_full_url'];
+    // protected $appends = ['image_full_url'];
+    // public function getImageFullUrlAttribute()
+    // {
+    //     $value = $this->image;
+    //     $storageValue = $this->getStorageValue('image');
 
-    // Accessor for full image URL
-    public function getImageFullUrlAttribute()
-    {
-        $value = $this->image;
-        if ($this->storage->isNotEmpty()) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('product', $value, $storage['value']);
-                }
-            }
-        }
-        return Helpers::get_full_url('product', $value, 'public');
-    }
+    //     return Helpers::get_full_url('product', $value, $storageValue);
+    // }
 
-    // Relationships
+    // private function getStorageValue($key)
+    // {
+    //     if (count($this->storage) > 0) {
+    //         foreach ($this->storage as $storage) {
+    //             if ($storage['key'] === $key) {
+    //                 return $storage['value'];
+    //             }
+    //         }
+    //     }
+
+    //     // Fallback default value if the key is not found in storage
+    //     return 'public';
+    // }
 
     public function logs()
     {
         return $this->hasMany(Log::class, 'model_id')->where('model', 'Food');
     }
-
     public function newVariations()
     {
         return $this->hasMany(Variation::class, 'food_id');
     }
-
     public function wishlists()
     {
         return $this->hasMany(Wishlist::class, 'food_id');
     }
-
     public function newVariationOptions()
     {
         return $this->hasMany(VariationOption::class, 'food_id');
+    }
+
+    public function scopeRecommended($query)
+    {
+        return $query->where('recommended', 1);
     }
 
     public function carts()
@@ -89,6 +95,26 @@ class Food extends Model
     public function translations()
     {
         return $this->morphMany(Translation::class, 'translationable');
+    }
+
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 1)->whereHas('restaurant', function ($query) {
+            return $query->where('status', 1);
+        });
+    }
+
+    public function scopeAvailable($query, $time)
+    {
+        $query->where(function ($q) use ($time) {
+            $q->where('available_time_starts', '<=', $time)->where('available_time_ends', '>=', $time);
+        });
+    }
+
+    public function scopePopular($query)
+    {
+        return $query->orderBy('order_count', 'desc');
     }
 
     public function reviews()
@@ -123,63 +149,18 @@ class Food extends Model
         return $this->morphMany(Storage::class, 'data');
     }
 
-    public function tags()
-    {
-        return $this->belongsToMany(Tag::class);
-    }
-
-    // Scopes
-
-    public function scopeRecommended($query)
-    {
-        return $query->where('recommended', 1);
-    }
-
-    public function scopeActive($query)
-    {
-        return $query->where('status', 1)->whereHas('restaurant', function ($query) {
-            return $query->where('status', 1);
-        });
-    }
-
-    public function scopeAvailable($query, $time)
-    {
-        return $query->where(function ($q) use ($time) {
-            $q->where('available_time_starts', '<=', $time)
-                ->where('available_time_ends', '>=', $time);
-        });
-    }
-
-    public function scopePopular($query)
-    {
-        return $query->orderBy('order_count', 'desc');
-    }
-
-    public function scopeType($query, $type)
-    {
-        if ($type == 'veg') {
-            return $query->where('veg', true);
-        } else if ($type == 'non_veg') {
-            return $query->where('veg', false);
-        }
-        return $query;
-    }
-
-    // Boot method to handle model events
-
     protected static function booted()
     {
-        // Apply global scopes based on user authentication
+        // dd( app()->getLocale());
         if (auth('vendor')->check() || auth('vendor_employee')->check()) {
             static::addGlobalScope(new RestaurantScope);
         }
 
         static::addGlobalScope(new ZoneScope);
 
-        // Load storage and translations with conditions
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
+        // static::addGlobalScope('storage', function ($builder) {
+        //     $builder->with('storage');
+        // });
 
         static::addGlobalScope('translate', function (Builder $builder) {
             $builder->with(['translations' => function ($query) {
@@ -188,45 +169,30 @@ class Food extends Model
         });
     }
 
-    protected static function boot()
+
+    public function scopeType($query, $type)
     {
-        parent::boot();
+        if ($type == 'veg') {
+            return $query->where('veg', true);
+        } else if ($type == 'non_veg') {
+            return $query->where('veg', false);
+        }
 
-        static::created(function ($food) {
-            $food->slug = $food->generateSlug($food->name);
-            $food->save();
-        });
-
-        static::retrieved(function ($food) {
-            CacheFoodOrders::dispatch($food);
-        });
-
-        static::saved(function ($model) {
-            if ($model->isDirty('image')) {
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                // Clear the cache after saving
-                cache()->forget("food_orders_{$model->id}");
-            }
-        });
+        return $query;
     }
 
+
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class);
+    }
 
 
     private function generateSlug($name)
     {
         $slug = Str::slug($name);
         if ($max_slug = static::where('slug', 'like', "{$slug}%")->latest('id')->value('slug')) {
+
             if ($max_slug == $slug) return "{$slug}-2";
 
             $max_slug = explode('-', $max_slug);
@@ -239,95 +205,87 @@ class Food extends Model
         return $slug;
     }
 
-    // Accessor for name with translation fallback
+
     public function getNameAttribute($value)
     {
-        if ($this->translations->isNotEmpty()) {
+        if (count($this->translations) > 0) {
+            // info(count($this->translations));
             foreach ($this->translations as $translation) {
                 if ($translation['key'] == 'name') {
                     return $translation['value'];
                 }
             }
         }
+
         return $value;
     }
 
-    // Accessor for description with translation fallback
     public function getDescriptionAttribute($value)
     {
-        if ($this->translations->isNotEmpty()) {
+        if (count($this->translations) > 0) {
             foreach ($this->translations as $translation) {
                 if ($translation['key'] == 'description') {
                     return $translation['value'];
                 }
             }
         }
+
         return $value;
     }
-
-    // Accessor to calculate available stock
     public function getItemStockAttribute($value)
     {
         return $value - $this->sell_count > 0 ? $value - $this->sell_count : 0;
     }
 
-    // Accessor for variations with JSON handling
     public function getVariationsAttribute($value)
-    {
-        try {
-            if (is_string($value) && json_decode($value, true) == null && $this->newVariations->isNotEmpty() && $this->newVariationOptions->isNotEmpty()) {
-                $result = [];
-                foreach ($this->newVariations as $variation) {
-                    $variationArray = [
-                        "variation_id" => (int) $variation['id'],
-                        "name" => $variation['name'],
-                        "type" => $variation['type'],
-                        "min" => (string) $variation['min'],
-                        "max" => (string) $variation['max'],
-                        "required" => $variation['is_required'] ? "on" : 'off',
-                        "values" => []
-                    ];
+{
+    try {
+        // Check if the current attribute should be recalculated
+        if (is_string($value) &&  (json_decode($value, true) == null || count(json_decode($value, true)) == 0) && $this->newVariations->isNotEmpty() && $this->newVariationOptions->isNotEmpty()) {
+            $result = [];
 
-                    foreach ($this->newVariationOptions as $option) {
-                        if ($option['variation_id'] == $variation['id']) {
-                            $current_stock = $option['stock_type'] == 'unlimited' ? 'unlimited' : $option['total_stock'] - $option['sell_count'];
-                            $variationArray['values'][] = [
-                                "label" => $option['option_name'],
-                                "optionPrice" => $option['option_price'],
-                                "total_stock" => (string) $option['total_stock'],
-                                "stock_type" => $option['stock_type'],
-                                "sell_count" => (string) $option['sell_count'],
-                                "option_id" => (int) $option['id'],
-                                "current_stock" => (int) ($current_stock == 'unlimited' ? 0 : max($current_stock, 0)),
-                            ];
-                        }
+            foreach ($this->newVariations as $variation) {
+                $variationArray = [
+                    "variation_id" => (int) $variation->id,
+                    "name" => $variation->name,
+                    "type" => $variation->type,
+                    "min" => (string) $variation->min,
+                    "max" => (string) $variation->max,
+                    "required" => $variation->is_required ? "on" : "off",
+                    "values" => []
+                ];
+
+                foreach ($this->newVariationOptions as $option) {
+                    if ($option->variation_id == $variation->id) {
+                        $current_stock = $option->stock_type == 'unlimited' ? 'unlimited' : ($option->total_stock - $option->sell_count);
+
+                        $variationArray['values'][] = [
+                            "label" => $option->option_name,
+                            "optionPrice" => $option->option_price,
+                            "total_stock" => (string) $option->total_stock,
+                            "stock_type" => $option->stock_type,
+                            "sell_count" => (string) $option->sell_count,
+                            "option_id" => (int) $option->id,
+                            "current_stock" => $current_stock === 'unlimited' ? 0 : max(0, $current_stock)
+                        ];
                     }
-                    $result[] = $variationArray;
                 }
 
-                return json_encode($result);
-            } else {
-                return $value;
+                $result[] = $variationArray;
             }
-        } catch (\Exception $exception) {
-            info([$exception->getFile(), $exception->getLine(), $exception->getMessage()]);
+
+            // Unset properties to save memory
+            unset($this->newVariations);
+            unset($this->newVariationOptions);
+
+            return json_encode($result);
+        } else {
             return $value;
         }
+    } catch (\Exception $exception) {
+        info([$exception->getFile(), $exception->getLine(), $exception->getMessage()]);
+        return $value;
     }
-    public function toSearchableArray()
-    {
+}
 
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'description' => $this->description,
-            'active' => $this->status == 1 && optional($this->restaurant)->status == 1,
-            'restaurant_name' => $this->restaurant->name ?? null,  // Safe access
-            'restaurant_id' => $this->restaurant->restaurant_id ?? null,  // Safe access
-            'zone_id' => $this->restaurant->zone_id ?? null,       // Safe access
-            'weekday' => $this->restaurant->weekday ?? null,
-            'created_at' => $this->created_at,
-            'desc' => $this->desc
-        ];
-    }
 }

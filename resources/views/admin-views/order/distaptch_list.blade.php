@@ -382,7 +382,7 @@
                     <small class="text-cap mb-3">{{translate('messages.restaurant')}}</small>
                     <div class="mb-2 initial-36">
                         <select name="vendor[]" id="vendor_ids" class="form-control js-select2-custom" multiple="multiple">
-                        @foreach(\App\Models\Restaurant::whereIn('id', $vendor_ids)->get(['id','name']) as $restaurant)
+                        @foreach(\App\Models\Restaurant::whereIn('restaurant_id', $vendor_ids)->get(['restaurant_id','name']) as $restaurant)
                             <option value="{{$restaurant->restaurant_id}}" selected >{{$restaurant->name}}</option>
                         @endforeach
                         </select>

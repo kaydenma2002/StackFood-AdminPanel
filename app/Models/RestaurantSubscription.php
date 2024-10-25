@@ -44,7 +44,7 @@ class RestaurantSubscription extends Model
     }
     public function restaurant()
     {
-        return $this->belongsTo(Restaurant::class,'restaurant_id','restaurant_id');
+        return $this->belongsTo(Restaurant::class,'restaurant_id');
     }
 
     protected static function booted()

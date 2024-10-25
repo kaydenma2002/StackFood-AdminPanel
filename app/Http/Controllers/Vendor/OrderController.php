@@ -15,143 +15,194 @@ use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
+use App\Events\OrderStatusUpdated;
 
 class OrderController extends Controller
 {
-    public function list($status , Request $request)
+    public function list($status, Request $request)
     {
         $key = explode(' ', $request['search']);
 
-        $data =0;
-        $restaurant =Helpers::get_restaurant_data();
-        if (($restaurant->restaurant_model == 'subscription' &&  $restaurant?->restaurant_sub?->self_delivery == 1)  || ($restaurant->restaurant_model == 'commission' &&  $restaurant->self_delivery_system == 1) ){
-        $data =1;
+        $data = 0;
+        $restaurant = Helpers::get_restaurant_data();
+        if (($restaurant->restaurant_model == 'subscription' &&  $restaurant?->restaurant_sub?->self_delivery == 1)  || ($restaurant->restaurant_model == 'commission' &&  $restaurant->self_delivery_system == 1)) {
+            $data = 1;
         }
 
-        Order::where(['checked' => 0])->where('restaurant_id',Helpers::get_restaurant_id())->update(['checked' => 1]);
+        Order::where(['checked' => 0])->where('restaurant_id', Helpers::get_restaurant_id())->update(['checked' => 1]);
 
         $orders = Order::with(['customer'])
-        ->when($status == 'searching_for_deliverymen', function($query){
-            return $query->SearchingForDeliveryman();
-        })
-        ->when($status == 'confirmed', function($query){
-            return $query->whereIn('order_status',['confirmed', 'accepted'])->whereNotNull('confirmed');
-        })
-        ->when($status == 'pending', function($query) use($data){
-            if(config('order_confirmation_model') == 'restaurant' || $data)
-            {
-                return $query->where('order_status','pending');
-            }
-            else
-            {
-                return $query->where('order_status','pending')->where('order_type', 'take_away');
-            }
-        })
-        ->when($status == 'cooking', function($query){
-            return $query->where('order_status','processing');
-        })
-        ->when($status == 'food_on_the_way', function($query){
-            return $query->where('order_status','picked_up');
-        })
-        ->when($status == 'delivered', function($query){
-            return $query->Delivered();
-        })
-        ->when($status == 'ready_for_delivery', function($query){
-            return $query->where('order_status','handover');
-        })
-        ->when($status == 'refund_requested', function($query){
-            return $query->Refund_requested();
-        })
-        ->when($status == 'refunded', function($query){
-            return $query->Refunded();
-        })
-        ->when($status == 'scheduled', function($query) use($data){
-            return $query->Scheduled()->where(function($q) use($data){
-                if(config('order_confirmation_model') == 'restaurant' || $data)
-                {
-                    $q->whereNotIn('order_status',['failed','canceled', 'refund_requested', 'refunded']);
+            ->when($status == 'searching_for_deliverymen', function ($query) {
+                return $query->SearchingForDeliveryman();
+            })
+            ->when($status == 'confirmed', function ($query) {
+                return $query->whereIn('order_status', ['confirmed', 'accepted'])->whereNotNull('confirmed');
+            })
+            ->when($status == 'pending', function ($query) use ($data) {
+                if (config('order_confirmation_model') == 'restaurant' || $data) {
+                    return $query->where('order_status', 'pending');
+                } else {
+                    return $query->where('order_status', 'pending')->where('order_type', 'take_away');
                 }
-                else
-                {
-                    $q->whereNotIn('order_status',['pending','failed','canceled', 'refund_requested', 'refunded'])->orWhere(function($query){
-                        $query->where('order_status','pending')->where('order_type', 'take_away');
-                    });
-                }
-            });
-        })
-        ->when($status == 'all', function($query) use($data){
-            return $query->where(function($q1) use($data) {
-                $q1->whereNotIn('order_status',(config('order_confirmation_model') == 'restaurant'|| $data)?['failed','canceled', 'refund_requested', 'refunded']:['pending','failed','canceled', 'refund_requested', 'refunded'])
-                ->orWhere(function($q2){
-                    return $q2->where('order_status','pending')->where('order_type', 'take_away');
-                })->orWhere(function($q3){
-                    return $q3->where('order_status','pending')->whereNotNull('subscription_id');
+            })
+            ->when($status == 'cooking', function ($query) {
+                return $query->where('order_status', 'processing');
+            })
+            ->when($status == 'food_on_the_way', function ($query) {
+                return $query->where('order_status', 'picked_up');
+            })
+            ->when($status == 'delivered', function ($query) {
+                return $query->Delivered();
+            })
+            ->when($status == 'ready_for_delivery', function ($query) {
+                return $query->where('order_status', 'handover');
+            })
+            ->when($status == 'refund_requested', function ($query) {
+                return $query->Refund_requested();
+            })
+            ->when($status == 'refunded', function ($query) {
+                return $query->Refunded();
+            })
+            ->when($status == 'scheduled', function ($query) use ($data) {
+                return $query->Scheduled()->where(function ($q) use ($data) {
+                    if (config('order_confirmation_model') == 'restaurant' || $data) {
+                        $q->whereNotIn('order_status', ['failed', 'canceled', 'refund_requested', 'refunded']);
+                    } else {
+                        $q->whereNotIn('order_status', ['pending', 'failed', 'canceled', 'refund_requested', 'refunded'])->orWhere(function ($query) {
+                            $query->where('order_status', 'pending')->where('order_type', 'take_away');
+                        });
+                    }
                 });
-            });
-        })
-        ->when(in_array($status, ['pending','confirmed']), function($query){
-            return $query->OrderScheduledIn(30);
-        })
-        ->when(isset($key), function ($query) use ($key) {
-            return $query->where(function ($q) use ($key) {
-                foreach ($key as $value) {
-                    $q->orWhere('id', 'like', "%{$value}%")
-                        ->orWhere('order_status', 'like', "%{$value}%")
-                        ->orWhere('transaction_reference', 'like', "%{$value}%");
-                }
-            });
-        })
-        ->Notpos()
-        ->NotDigitalOrder()
-        ->hasSubscriptionToday()
-        ->where('restaurant_id',\App\CentralLogics\Helpers::get_restaurant_id())
-        ->orderBy('schedule_at', 'desc')
-        ->paginate(config('default_pagination'));
+            })
+            ->when($status == 'all', function ($query) use ($data) {
+                return $query->where(function ($q1) use ($data) {
+                    $q1->whereNotIn('order_status', (config('order_confirmation_model') == 'restaurant' || $data) ? ['failed', 'canceled', 'refund_requested', 'refunded'] : ['pending', 'failed', 'canceled', 'refund_requested', 'refunded'])
+                        ->orWhere(function ($q2) {
+                            return $q2->where('order_status', 'pending')->where('order_type', 'take_away');
+                        })->orWhere(function ($q3) {
+                            return $q3->where('order_status', 'pending')->whereNotNull('subscription_id');
+                        });
+                });
+            })
+            ->when(in_array($status, ['pending', 'confirmed']), function ($query) {
+                return $query->OrderScheduledIn(30);
+            })
+            ->when(isset($key), function ($query) use ($key) {
+                return $query->where(function ($q) use ($key) {
+                    foreach ($key as $value) {
+                        $q->orWhere('id', 'like', "%{$value}%")
+                            ->orWhere('order_status', 'like', "%{$value}%")
+                            ->orWhere('transaction_reference', 'like', "%{$value}%");
+                    }
+                });
+            })
+            ->Notpos()
+            ->NotDigitalOrder()
+            ->hasSubscriptionToday()
+            ->where('restaurant_id', \App\CentralLogics\Helpers::get_restaurant_id())
+            ->orderBy('schedule_at', 'desc')
+            ->paginate(config('default_pagination'));
 
-        $st=$status;
-        $status = translate('messages.'.$status);
-        return view('vendor-views.order.list', compact('orders', 'status','st'));
+        $st = $status;
+        $status = translate('messages.' . $status);
+        return view('vendor-views.order.list', compact('orders', 'status', 'st'));
     }
-
-    public function search(Request $request){
+    public function list_daily(Request $request)
+    {
         $key = explode(' ', $request['search']);
-        $orders=Order::where(['restaurant_id'=>Helpers::get_restaurant_id()])->where(function ($q) use ($key) {
+
+        // Get restaurant details and check conditions for self-delivery model
+        $restaurant = Helpers::get_restaurant_data();
+        $data = ($restaurant->restaurant_model == 'subscription' && $restaurant?->restaurant_sub?->self_delivery == 1) ||
+            ($restaurant->restaurant_model == 'commission' && $restaurant->self_delivery_system == 1) ? 1 : 0;
+
+        // Mark all unchecked orders as checked
+        Order::where(['checked' => 0])->where('restaurant_id', Helpers::get_restaurant_id())->update(['checked' => 1]);
+
+        // Fetch today's orders with necessary relationships
+        $orders = Order::with(['customer'])
+            ->where('restaurant_id', Helpers::get_restaurant_id())
+            ->whereDate('created_at', now()->toDateString()) // Ensure orders are from today's date
+            ->when(isset($key), function ($query) use ($key) {
+                return $query->where(function ($q) use ($key) {
+                    foreach ($key as $value) {
+                        $q->orWhere('id', 'like', "%{$value}%")
+                            ->orWhere('order_status', 'like', "%{$value}%")
+                            ->orWhere('transaction_reference', 'like', "%{$value}%");
+                    }
+                });
+            })
+            ->Notpos() // Exclude POS orders
+            ->NotDigitalOrder() // Exclude digital orders
+            ->hasSubscriptionToday() // Include only orders that have a valid subscription today
+            ->orderBy('schedule_at', 'desc') // Order by scheduled date
+            ->paginate(config('default_pagination')); // Paginate results based on configuration
+
+        // Return view with all orders
+        $status = translate('messages.all_statuses');
+        $st = 'all';
+
+        return view('vendor-views.order-daily.list', compact('orders', 'status', 'st'));
+    }
+    public function updateStatus($id, $status)
+    {
+        // List of allowed statuses to prevent invalid input
+        $allowedStatuses = ['pending', 'confirmed', 'handover', 'processing', 'delivered'];
+
+        // Check if the status is allowed
+        if (!in_array($status, $allowedStatuses)) {
+            return redirect()->back()->with('error', 'Invalid order status');
+        }
+
+        // Find the order by ID
+        $order = Order::findOrFail($id);
+
+        // Update the order status
+        $order->order_status = $status;
+        $order->save();
+        event(new OrderStatusUpdated($order->id, $status));
+        return redirect()->back()->with('success', 'Order status updated successfully to ' . ucfirst($status));
+    }
+    public function search(Request $request)
+    {
+        $key = explode(' ', $request['search']);
+        $orders = Order::where(['restaurant_id' => Helpers::get_restaurant_id()])->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('id', 'like', "%{$value}%")
                     ->orWhere('order_status', 'like', "%{$value}%")
                     ->orWhere('transaction_reference', 'like', "%{$value}%");
             }
         })->Notpos()
-        ->NotDigitalOrder()
-        ->limit(100)->get();
+            ->NotDigitalOrder()
+            ->limit(100)->get();
         return response()->json([
-            'view'=>view('vendor-views.order.partials._table',compact('orders'))->render()
+            'view' => view('vendor-views.order.partials._table', compact('orders'))->render()
         ]);
     }
 
-    public function details(Request $request,$id)
+    public function details(Request $request, $id)
     {
-        $order = Order::with(['offline_payments','payments','subscription','subscription.schedule_today','details', 'customer'=>function($query){
+        $order = Order::with(['offline_payments', 'payments', 'subscription', 'subscription.schedule_today', 'details', 'customer' => function ($query) {
             return $query->withCount('orders');
-        },'delivery_man'=>function($query){
+        }, 'delivery_man' => function ($query) {
             return $query->withCount('orders');
         }])->where(['id' => $id, 'restaurant_id' => Helpers::get_restaurant_id()])
 
-        ->Notpos()
-        ->NotDigitalOrder()
-        // ->hasSubscriptionToday()
-        ->first();
+            ->Notpos()
+            ->NotDigitalOrder()
+            // ->hasSubscriptionToday()
+            ->first();
 
         if (isset($order)) {
-        $deliveryMen = DeliveryMan::with('last_location')->where('restaurant_id',Helpers::get_restaurant_id())->active()->get();
-        $deliveryMen = Helpers::deliverymen_list_formatting(data:$deliveryMen, restaurant_lat: $order?->restaurant?->latitude, restaurant_lng: $order?->restaurant?->longitude);
+            $deliveryMen = DeliveryMan::with('last_location')->where('restaurant_id', Helpers::get_restaurant_id())->active()->get();
+            $deliveryMen = Helpers::deliverymen_list_formatting(data: $deliveryMen, restaurant_lat: $order?->restaurant?->latitude, restaurant_lng: $order?->restaurant?->longitude);
 
-        $selected_delivery_man = DeliveryMan::with('last_location')->where('id',$order->delivery_man_id)->first() ?? [];
-        if($order->delivery_man){
-            $selected_delivery_man = Helpers::deliverymen_list_formatting(data:$selected_delivery_man, restaurant_lat: $order?->restaurant?->latitude, restaurant_lng: $order?->restaurant?->longitude , single_data:true);
-        }
+            $selected_delivery_man = DeliveryMan::with('last_location')->where('id', $order->delivery_man_id)->first() ?? [];
+            if ($order->delivery_man) {
+                $selected_delivery_man = Helpers::deliverymen_list_formatting(data: $selected_delivery_man, restaurant_lat: $order?->restaurant?->latitude, restaurant_lng: $order?->restaurant?->longitude, single_data: true);
+            }
 
-            return view('vendor-views.order.order-view', compact('order', 'selected_delivery_man' , 'deliveryMen'));
+            return view('vendor-views.order.order-view', compact('order', 'selected_delivery_man', 'deliveryMen'));
         } else {
             Toastr::info('No more orders!');
             return back();
@@ -163,94 +214,79 @@ class OrderController extends Controller
         $request->validate([
             'id' => 'required',
             'order_status' => 'required|in:confirmed,processing,handover,delivered,canceled',
-            'reason' =>'required_if:order_status,canceled',
-        ],[
+            'reason' => 'required_if:order_status,canceled',
+        ], [
             'id.required' => 'Order id is required!'
         ]);
 
-        $order = Order::where(['id' => $request->id, 'restaurant_id' => Helpers::get_restaurant_id()])->with(['subscription_logs','details'])->first();
+        $order = Order::where(['id' => $request->id, 'restaurant_id' => Helpers::get_restaurant_id()])->with(['subscription_logs', 'details'])->first();
 
-        if($order->delivered != null)
-        {
+        if ($order->delivered != null) {
             Toastr::warning(translate('messages.cannot_change_status_after_delivered'));
             return back();
         }
 
-        if($request['order_status']=='canceled' && !config('canceled_by_restaurant'))
-        {
+        if ($request['order_status'] == 'canceled' && !config('canceled_by_restaurant')) {
             Toastr::warning(translate('messages.you_can_not_cancel_a_order'));
             return back();
         }
 
-        if($request['order_status']=='canceled' && $order->confirmed)
-        {
+        if ($request['order_status'] == 'canceled' && $order->confirmed) {
             Toastr::warning(translate('messages.you_can_not_cancel_after_confirm'));
             return back();
         }
 
-        $data =0;
-        $restaurant =Helpers::get_restaurant_data();
-        if (($restaurant->restaurant_model == 'subscription' && $restaurant?->restaurant_sub?->self_delivery == 1)  || ($restaurant->restaurant_model == 'commission' &&  $restaurant->self_delivery_system == 1) ){
-        $data =1;
+        $data = 0;
+        $restaurant = Helpers::get_restaurant_data();
+        if (($restaurant->restaurant_model == 'subscription' && $restaurant?->restaurant_sub?->self_delivery == 1)  || ($restaurant->restaurant_model == 'commission' &&  $restaurant->self_delivery_system == 1)) {
+            $data = 1;
         }
 
-        if($request['order_status']=='delivered' && $order->order_type != 'take_away' && !$data)
-        {
+        if ($request['order_status'] == 'delivered' && $order->order_type != 'take_away' && !$data) {
             Toastr::warning(translate('messages.you_can_not_delivered_delivery_order'));
             return back();
         }
 
-        if($request['order_status'] =="confirmed")
-        {
-            if(!$data && config('order_confirmation_model') == 'deliveryman' && $order->order_type != 'take_away' && $order->subscription_id == null )
-            {
+        if ($request['order_status'] == "confirmed") {
+            if (!$data && config('order_confirmation_model') == 'deliveryman' && $order->order_type != 'take_away' && $order->subscription_id == null) {
                 Toastr::warning(translate('messages.order_confirmation_warning'));
                 return back();
             }
         }
 
         if ($request->order_status == 'delivered') {
-            $order_delivery_verification = (boolean)\App\Models\BusinessSetting::where(['key' => 'order_delivery_verification'])->first()?->value;
-            if($order_delivery_verification)
-            {
-                if($request->otp)
-                {
-                    if($request->otp != $order->otp)
-                    {
+            $order_delivery_verification = (bool)\App\Models\BusinessSetting::where(['key' => 'order_delivery_verification'])->first()?->value;
+            if ($order_delivery_verification) {
+                if ($request->otp) {
+                    if ($request->otp != $order->otp) {
                         Toastr::warning(translate('messages.order_varification_code_not_matched'));
                         return back();
                     }
-                }
-                else
-                {
+                } else {
                     Toastr::warning(translate('messages.order_varification_code_is_required'));
                     return back();
                 }
             }
-            if(isset($order->subscription_id) && count($order->subscription_logs) == 0 ){
+            if (isset($order->subscription_id) && count($order->subscription_logs) == 0) {
                 Toastr::warning(translate('messages.You_Can_Not_Delivered_This_Subscription_order_Before_Schedule'));
                 return back();
             }
 
-            if($order->transaction  == null || isset($order->subscription_id))
-            {
-                $unpaid_payment = OrderPayment::where('payment_status','unpaid')->where('order_id',$order->id)->first()?->payment_method;
+            if ($order->transaction  == null || isset($order->subscription_id)) {
+                $unpaid_payment = OrderPayment::where('payment_status', 'unpaid')->where('order_id', $order->id)->first()?->payment_method;
                 $unpaid_pay_method = 'digital_payment';
-                if($unpaid_payment){
+                if ($unpaid_payment) {
                     $unpaid_pay_method = $unpaid_payment;
                 }
 
-                if($order->payment_method == 'cash_on_delivery' || $unpaid_pay_method == 'cash_on_delivery')
-                {
-                    $ol = OrderLogic::create_transaction(order:$order,received_by:'restaurant', status: null);
-                }
-                else{
-                    $ol = OrderLogic::create_transaction(order:$order,received_by:'admin', status: null);
+                if ($order->payment_method == 'cash_on_delivery' || $unpaid_pay_method == 'cash_on_delivery') {
+                    $ol = OrderLogic::create_transaction(order: $order, received_by: 'restaurant', status: null);
+                } else {
+                    $ol = OrderLogic::create_transaction(order: $order, received_by: 'admin', status: null);
                 }
 
 
-                if(!$ol)
-                {
+                if (!$ol) {
                     Toastr::warning(translate('messages.faield_to_create_order_transaction'));
                     return back();
                 }
@@ -258,48 +294,41 @@ class OrderController extends Controller
 
             $order->payment_status = 'paid';
 
-            OrderLogic::update_unpaid_order_payment(order_id:$order->id, payment_method:$order->payment_method);
+            OrderLogic::update_unpaid_order_payment(order_id: $order->id, payment_method: $order->payment_method);
 
-            $order->details->each(function($item, $key){
-                if($item->food)
-                {
+            $order->details->each(function ($item, $key) {
+                if ($item->food) {
                     $item->food->increment('order_count');
                 }
             });
             $order->customer ?  $order->customer->increment('order_count') : '';
         }
-        if($request->order_status == 'canceled' || $request->order_status == 'delivered')
-        {
-            if($order->delivery_man)
-            {
+        if ($request->order_status == 'canceled' || $request->order_status == 'delivered') {
+            if ($order->delivery_man) {
                 $dm = $order->delivery_man;
-                $dm->current_orders = $dm->current_orders>1?$dm->current_orders-1:0;
+                $dm->current_orders = $dm->current_orders > 1 ? $dm->current_orders - 1 : 0;
                 $dm->save();
             }
         }
 
-        if($request->order_status == 'canceled' )
-        {
+        if ($request->order_status == 'canceled') {
             Helpers::increment_order_count($order->restaurant);
             $order->cancellation_reason = $request->reason;
             $order->canceled_by = 'restaurant';
-            if(!isset($order->confirmed) && isset($order->subscription_id)){
+            if (!isset($order->confirmed) && isset($order->subscription_id)) {
                 $order->subscription()->update(['status' => 'canceled']);
-                    if($order?->subscription?->log){
-                        $order->subscription->log()->update([
-                            'order_status' => $request->status,
-                            'canceled' => now(),
-                            ]);
-                    }
+                if ($order?->subscription?->log) {
+                    $order->subscription->log()->update([
+                        'order_status' => $request->status,
+                        'canceled' => now(),
+                    ]);
+                }
             }
-            Helpers::decreaseSellCount(order_details:$order->details);
-
+            Helpers::decreaseSellCount(order_details: $order->details);
         }
-        if($request->order_status == 'delivered')
-        {
+        if ($request->order_status == 'delivered') {
             $order->restaurant->increment('order_count');
-            if($order->delivery_man)
-            {
+            if ($order->delivery_man) {
                 $order->delivery_man->increment('order_count');
             }
         }
@@ -309,10 +338,9 @@ class OrderController extends Controller
         }
         $order[$request['order_status']] = now();
         $order->save();
+        //event(new OrderStatusUpdated($order->id, $request->order_status));
 
-
-        if(!Helpers::send_order_notification($order))
-        {
+        if (!Helpers::send_order_notification($order)) {
             Toastr::warning(translate('messages.push_notification_faild'));
         }
         OrderLogic::update_subscription_log($order);
@@ -365,109 +393,102 @@ class OrderController extends Controller
     }
 
 
-    public function orders_export($status , Request $request)
+    public function orders_export($status, Request $request)
     {
-        try{
+        try {
             $key = explode(' ', $request['search']);
 
-            $data =0;
-            $restaurant =Helpers::get_restaurant_data();
-            if (($restaurant->restaurant_model == 'subscription' &&  $restaurant?->restaurant_sub?->self_delivery == 1)  || ($restaurant->restaurant_model == 'commission' &&  $restaurant->self_delivery_system == 1) ){
-            $data =1;
+            $data = 0;
+            $restaurant = Helpers::get_restaurant_data();
+            if (($restaurant->restaurant_model == 'subscription' &&  $restaurant?->restaurant_sub?->self_delivery == 1)  || ($restaurant->restaurant_model == 'commission' &&  $restaurant->self_delivery_system == 1)) {
+                $data = 1;
             }
 
-            Order::where(['checked' => 0])->where('restaurant_id',Helpers::get_restaurant_id())->update(['checked' => 1]);
+            Order::where(['checked' => 0])->where('restaurant_id', Helpers::get_restaurant_id())->update(['checked' => 1]);
 
             $orders = Order::with(['customer'])
-            ->when($status == 'searching_for_deliverymen', function($query){
-                return $query->SearchingForDeliveryman();
-            })
-            ->when($status == 'confirmed', function($query){
-                return $query->whereIn('order_status',['confirmed', 'accepted'])->whereNotNull('confirmed');
-            })
-            ->when($status == 'pending', function($query) use($data){
-                if(config('order_confirmation_model') == 'restaurant' || $data)
-                {
-                    return $query->where('order_status','pending');
-                }
-                else
-                {
-                    return $query->where('order_status','pending')->where('order_type', 'take_away');
-                }
-            })
-            ->when($status == 'cooking', function($query){
-                return $query->where('order_status','processing');
-            })
-            ->when($status == 'food_on_the_way', function($query){
-                return $query->where('order_status','picked_up');
-            })
-            ->when($status == 'delivered', function($query){
-                return $query->Delivered();
-            })
-            ->when($status == 'ready_for_delivery', function($query){
-                return $query->where('order_status','handover');
-            })
-            ->when($status == 'refund_requested', function($query){
-                return $query->Refund_requested();
-            })
-            ->when($status == 'refunded', function($query){
-                return $query->Refunded();
-            })
-            ->when($status == 'scheduled', function($query) use($data){
-                return $query->Scheduled()->where(function($q) use($data){
-                    if(config('order_confirmation_model') == 'restaurant' || $data)
-                    {
-                        $q->whereNotIn('order_status',['failed','canceled', 'refund_requested', 'refunded']);
+                ->when($status == 'searching_for_deliverymen', function ($query) {
+                    return $query->SearchingForDeliveryman();
+                })
+                ->when($status == 'confirmed', function ($query) {
+                    return $query->whereIn('order_status', ['confirmed', 'accepted'])->whereNotNull('confirmed');
+                })
+                ->when($status == 'pending', function ($query) use ($data) {
+                    if (config('order_confirmation_model') == 'restaurant' || $data) {
+                        return $query->where('order_status', 'pending');
+                    } else {
+                        return $query->where('order_status', 'pending')->where('order_type', 'take_away');
                     }
-                    else
-                    {
-                        $q->whereNotIn('order_status',['pending','failed','canceled', 'refund_requested', 'refunded'])->orWhere(function($query){
-                            $query->where('order_status','pending')->where('order_type', 'take_away');
-                        });
-                    }
-                });
-            })
-            ->when($status == 'all', function($query) use($data){
-                return $query->where(function($q1) use($data) {
-                    $q1->whereNotIn('order_status',(config('order_confirmation_model') == 'restaurant'|| $data)?['failed','canceled', 'refund_requested', 'refunded']:['pending','failed','canceled', 'refund_requested', 'refunded'])
-                    ->orWhere(function($q2){
-                        return $q2->where('order_status','pending')->where('order_type', 'take_away');
-                    })->orWhere(function($q3){
-                        return $q3->where('order_status','pending')->whereNotNull('subscription_id');
+                })
+                ->when($status == 'cooking', function ($query) {
+                    return $query->where('order_status', 'processing');
+                })
+                ->when($status == 'food_on_the_way', function ($query) {
+                    return $query->where('order_status', 'picked_up');
+                })
+                ->when($status == 'delivered', function ($query) {
+                    return $query->Delivered();
+                })
+                ->when($status == 'ready_for_delivery', function ($query) {
+                    return $query->where('order_status', 'handover');
+                })
+                ->when($status == 'refund_requested', function ($query) {
+                    return $query->Refund_requested();
+                })
+                ->when($status == 'refunded', function ($query) {
+                    return $query->Refunded();
+                })
+                ->when($status == 'scheduled', function ($query) use ($data) {
+                    return $query->Scheduled()->where(function ($q) use ($data) {
+                        if (config('order_confirmation_model') == 'restaurant' || $data) {
+                            $q->whereNotIn('order_status', ['failed', 'canceled', 'refund_requested', 'refunded']);
+                        } else {
+                            $q->whereNotIn('order_status', ['pending', 'failed', 'canceled', 'refund_requested', 'refunded'])->orWhere(function ($query) {
+                                $query->where('order_status', 'pending')->where('order_type', 'take_away');
+                            });
+                        }
                     });
-                });
-            })
-            ->when(in_array($status, ['pending','confirmed']), function($query){
-                return $query->OrderScheduledIn(30);
-            })
-            ->when(isset($key), function ($query) use ($key) {
-                return $query->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->orWhere('id', 'like', "%{$value}%")
-                            ->orWhere('order_status', 'like', "%{$value}%")
-                            ->orWhere('transaction_reference', 'like', "%{$value}%");
-                    }
-                });
-            })
-            ->Notpos()
-            ->NotDigitalOrder()
-            ->hasSubscriptionToday()
-            ->where('restaurant_id',\App\CentralLogics\Helpers::get_restaurant_id())
-            ->orderBy('schedule_at', 'desc')
-            ->get();
+                })
+                ->when($status == 'all', function ($query) use ($data) {
+                    return $query->where(function ($q1) use ($data) {
+                        $q1->whereNotIn('order_status', (config('order_confirmation_model') == 'restaurant' || $data) ? ['failed', 'canceled', 'refund_requested', 'refunded'] : ['pending', 'failed', 'canceled', 'refund_requested', 'refunded'])
+                            ->orWhere(function ($q2) {
+                                return $q2->where('order_status', 'pending')->where('order_type', 'take_away');
+                            })->orWhere(function ($q3) {
+                                return $q3->where('order_status', 'pending')->whereNotNull('subscription_id');
+                            });
+                    });
+                })
+                ->when(in_array($status, ['pending', 'confirmed']), function ($query) {
+                    return $query->OrderScheduledIn(30);
+                })
+                ->when(isset($key), function ($query) use ($key) {
+                    return $query->where(function ($q) use ($key) {
+                        foreach ($key as $value) {
+                            $q->orWhere('id', 'like', "%{$value}%")
+                                ->orWhere('order_status', 'like', "%{$value}%")
+                                ->orWhere('transaction_reference', 'like', "%{$value}%");
+                        }
+                    });
+                })
+                ->Notpos()
+                ->NotDigitalOrder()
+                ->hasSubscriptionToday()
+                ->where('restaurant_id', \App\CentralLogics\Helpers::get_restaurant_id())
+                ->orderBy('schedule_at', 'desc')
+                ->get();
 
-            if (in_array($status, ['requested','rejected','refunded']))
-            {
+            if (in_array($status, ['requested', 'rejected', 'refunded'])) {
                 $data = [
-                    'orders'=>$orders,
-                    'type'=>$request->order_type ?? translate('messages.all'),
-                    'status'=>$status,
-                    'order_status'=>isset($request->orderStatus)?implode(', ', $request->orderStatus):null,
-                    'search'=>$request->search ?? $key[0] ??null,
-                    'from'=>$request->from_date??null,
-                    'to'=>$request->to_date??null,
-                    'zones'=>isset($request->zone)?Helpers::get_zones_name($request->zone):null,
-                    'restaurant'=>Helpers::get_restaurant_name(Helpers::get_restaurant_id()),
+                    'orders' => $orders,
+                    'type' => $request->order_type ?? translate('messages.all'),
+                    'status' => $status,
+                    'order_status' => isset($request->orderStatus) ? implode(', ', $request->orderStatus) : null,
+                    'search' => $request->search ?? $key[0] ?? null,
+                    'from' => $request->from_date ?? null,
+                    'to' => $request->to_date ?? null,
+                    'zones' => isset($request->zone) ? Helpers::get_zones_name($request->zone) : null,
+                    'restaurant' => Helpers::get_restaurant_name(Helpers::get_restaurant_id()),
                 ];
 
                 if ($request->type == 'excel') {
@@ -478,45 +499,44 @@ class OrderController extends Controller
             }
 
 
-                $data = [
-                    'orders'=>$orders,
-                    'type'=>$request->order_type ?? translate('messages.all'),
-                    'status'=>$status,
-                    'order_status'=>isset($request->orderStatus)?implode(', ', $request->orderStatus):null,
-                    'search'=>$request->search ?? $key[0] ??null,
-                    'from'=>$request->from_date??null,
-                    'to'=>$request->to_date??null,
-                    'zones'=>isset($request->zone)?Helpers::get_zones_name($request->zone):null,
-                    'restaurant'=>Helpers::get_restaurant_name(Helpers::get_restaurant_id()),
-                ];
+            $data = [
+                'orders' => $orders,
+                'type' => $request->order_type ?? translate('messages.all'),
+                'status' => $status,
+                'order_status' => isset($request->orderStatus) ? implode(', ', $request->orderStatus) : null,
+                'search' => $request->search ?? $key[0] ?? null,
+                'from' => $request->from_date ?? null,
+                'to' => $request->to_date ?? null,
+                'zones' => isset($request->zone) ? Helpers::get_zones_name($request->zone) : null,
+                'restaurant' => Helpers::get_restaurant_name(Helpers::get_restaurant_id()),
+            ];
 
-                if ($request->type == 'excel') {
-                    return Excel::download(new OrderExport($data), 'Orders.xlsx');
-                } else if ($request->type == 'csv') {
-                    return Excel::download(new OrderExport($data), 'Orders.csv');
-                }
-
-            } catch(\Exception $e) {
-                // dd($e);
-                Toastr::error("line___{$e->getLine()}",$e->getMessage());
-                info(["line___{$e->getLine()}",$e->getMessage()]);
-                return back();
+            if ($request->type == 'excel') {
+                return Excel::download(new OrderExport($data), 'Orders.xlsx');
+            } else if ($request->type == 'csv') {
+                return Excel::download(new OrderExport($data), 'Orders.csv');
             }
+        } catch (\Exception $e) {
+            // dd($e);
+            Toastr::error("line___{$e->getLine()}", $e->getMessage());
+            info(["line___{$e->getLine()}", $e->getMessage()]);
+            return back();
+        }
     }
 
     public function add_order_proof(Request $request, $id)
     {
         $order = Order::find($id);
-        $img_names = $order->order_proof?json_decode($order->order_proof):[];
+        $img_names = $order->order_proof ? json_decode($order->order_proof) : [];
         $images = [];
         $total_file = count($request->order_proof) + count($img_names);
-        if(!$img_names){
+        if (!$img_names) {
             $request->validate([
                 'order_proof' => 'required|array|max:5',
             ]);
         }
 
-        if ($total_file>5) {
+        if ($total_file > 5) {
             Toastr::error(translate('messages.order_proof_must_not_have_more_than_5_item'));
             return back();
         }
@@ -524,7 +544,7 @@ class OrderController extends Controller
         if (!empty($request->file('order_proof'))) {
             foreach ($request->order_proof as $img) {
                 $image_name = Helpers::upload('order/', 'png', $img);
-                array_push($img_names, ['img'=>$image_name, 'storage'=> Helpers::getDisk()]);
+                array_push($img_names, ['img' => $image_name, 'storage' => Helpers::getDisk()]);
             }
             $images = $img_names;
         }
@@ -546,7 +566,7 @@ class OrderController extends Controller
             Toastr::warning(translate('all_image_delete_warning'));
             return back();
         }
-        Helpers::check_and_delete('order/' , $request['image']);
+        Helpers::check_and_delete('order/', $request['image']);
         foreach ($proof as $image) {
             if ($image != $request['name']) {
                 array_push($array, $image);
@@ -581,8 +601,8 @@ class OrderController extends Controller
                 $dm->save();
 
 
-            $deliveryman_push_notification_status=Helpers::getNotificationStatusData('deliveryman','deliveryman_order_assign_unassign');
-                if( $deliveryman_push_notification_status?->push_notification_status  == 'active' && $dm->fcm_token){
+                $deliveryman_push_notification_status = Helpers::getNotificationStatusData('deliveryman', 'deliveryman_order_assign_unassign');
+                if ($deliveryman_push_notification_status?->push_notification_status  == 'active' && $dm->fcm_token) {
 
                     $data = [
                         'title' => translate('messages.order_push_title'),
@@ -600,9 +620,6 @@ class OrderController extends Controller
                         'updated_at' => now()
                     ]);
                 }
-
-
-
             }
             $order->delivery_man_id = $delivery_man_id;
             $order->order_status = in_array($order->order_status, ['pending', 'confirmed']) ? 'accepted' : $order->order_status;
@@ -613,14 +630,16 @@ class OrderController extends Controller
             $deliveryman->save();
             $deliveryman->increment('assigned_order_count');
 
-            $value = Helpers::text_variable_data_format(value:Helpers::order_status_update_message('accepted',$order->customer? $order?->customer?->current_language_key:'en'),
-            restaurant_name:$order->restaurant?->name,
-            order_id:$order->id,
-            user_name:"{$order?->customer?->f_name} {$order?->customer?->l_name}",
-            delivery_man_name:"{$order?->delivery_man?->f_name} {$order?->delivery_man?->l_name}");
+            $value = Helpers::text_variable_data_format(
+                value: Helpers::order_status_update_message('accepted', $order->customer ? $order?->customer?->current_language_key : 'en'),
+                restaurant_name: $order->restaurant?->name,
+                order_id: $order->id,
+                user_name: "{$order?->customer?->f_name} {$order?->customer?->l_name}",
+                delivery_man_name: "{$order?->delivery_man?->f_name} {$order?->delivery_man?->l_name}"
+            );
 
             try {
-                $customer_push_notification_status=Helpers::getNotificationStatusData('customer','customer_order_notification');
+                $customer_push_notification_status = Helpers::getNotificationStatusData('customer', 'customer_order_notification');
 
                 if ($customer_push_notification_status?->push_notification_status  == 'active' && $value && $order?->customer?->cm_firebase_token) {
                     $fcm_token = $order->customer->cm_firebase_token;
@@ -642,8 +661,8 @@ class OrderController extends Controller
                     ]);
                 }
 
-                $deliveryman_push_notification_status=Helpers::getNotificationStatusData('deliveryman','deliveryman_order_assign_unassign');
-                if( $deliveryman_push_notification_status?->push_notification_status  == 'active' && $deliveryman->fcm_token){
+                $deliveryman_push_notification_status = Helpers::getNotificationStatusData('deliveryman', 'deliveryman_order_assign_unassign');
+                if ($deliveryman_push_notification_status?->push_notification_status  == 'active' && $deliveryman->fcm_token) {
                     $data = [
                         'title' => translate('messages.order_push_title'),
                         'description' => translate('messages.you_are_assigned_to_a_order'),
@@ -659,7 +678,6 @@ class OrderController extends Controller
                         'updated_at' => now()
                     ]);
                 }
-
             } catch (\Exception $e) {
                 info($e->getMessage());
                 Toastr::warning(translate('messages.push_notification_faild'));

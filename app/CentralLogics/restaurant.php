@@ -5,6 +5,7 @@ namespace App\CentralLogics;
 use App\Models\Restaurant;
 use App\Models\OrderTransaction;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RestaurantLogic
 {
@@ -144,6 +145,7 @@ class RestaurantLogic
                         ->havingRaw('AVG(reviews.rating) > ?', [3]);
                 }, 'avg_r')->having('avg_r', '>=', 3);
             })
+            ->orderBy('distance', 'asc')
             ->Active()
             ->type($type);
 

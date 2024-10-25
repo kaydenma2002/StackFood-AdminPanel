@@ -179,6 +179,7 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
             Route::post('update/{id}', 'AddOnController@update')->name('update');
             Route::delete('delete/{id}', 'AddOnController@delete')->name('delete');
         });
+        Route::get('/orders/{id}/status/{status}', 'OrderController@updateStatus')->name('orders.updateStatus');
 
         Route::group(['prefix' => 'order', 'as' => 'order.' , 'middleware' => ['module:order']], function () {
             Route::get('list/{status}', 'OrderController@list')->name('list');
@@ -210,6 +211,9 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
 
             Route::get('add-delivery-man/{order_id}/{delivery_man_id}', 'OrderController@add_delivery_man')->name('add-delivery-man');
 
+        });
+        Route::group(['prefix' => 'order_daily', 'as' => 'order_daily.'],function(){
+            Route::get('list/','OrderController@list_daily')->name('list');
         });
         Route::group(['prefix' => 'business-settings', 'as' => 'business-settings.', 'middleware' => ['module:restaurant_setup']], function () {
             Route::get('restaurant-setup', 'BusinessSettingsController@restaurant_index')->name('restaurant-setup');

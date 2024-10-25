@@ -111,8 +111,7 @@
     </div>
 </div>
 
-<script src="{{dynamicAsset('public/assets/admin')}}/js/view-pages/common.js"></script>
-<script>
+<script src="{{dynamicAsset('public/assets/admin')}}/js/view-pages/common.js"></script><script>
     "use strict";
     $(document).ready(function() {
         $("#msg").emojioneArea({

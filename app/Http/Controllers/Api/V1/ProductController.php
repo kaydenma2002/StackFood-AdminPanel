@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log; // Import the Log facade
 
 class ProductController extends Controller
 {
@@ -33,7 +34,7 @@ class ProductController extends Controller
         $type = $request->query('type', 'all');
 
         $products = ProductLogic::get_latest_products(limit: $request['limit'], offset: $request['offset'], restaurant_id: $request['restaurant_id'], category_id: $request['category_id'], type: $type);
-        $products['products'] = Helpers::product_data_formatting(data: $products['products'], multi_data: true, trans: false, local: app()->getLocale());
+        $products['products'] = Helpers::product_data_formatting(data: $products['products'], multi_data: false, trans: false, local: app()->getLocale());
         return response()->json($products, 200);
     }
 
@@ -108,7 +109,7 @@ class ProductController extends Controller
         }
 
         // Perform the MeiliSearch query
-
+        Log::info('search_query: ' . $search_query );
         $search_results = Food::search($search_query, function ($meiliSearch, $query, $options) use ($meili_query) {
 
             $options = array_merge($options, $meili_query);
@@ -279,6 +280,7 @@ class ProductController extends Controller
         ]);
 
         $product = Food::find($request->food_id);
+        $restaurant_id = $product->restaurant_id;
         if (isset($product) == false) {
             $validator->errors()->add('food_id', translate('messages.food_not_found'));
         }
@@ -309,7 +311,7 @@ class ProductController extends Controller
                 }
             }
         }
-
+        $review->restaurant_id = $restaurant_id;
         $review->user_id = $request?->user()?->id;
         $review->food_id = $request->food_id;
         $review->order_id = $request->order_id;
@@ -353,7 +355,7 @@ class ProductController extends Controller
         $key = explode(' ', $request['name']);
         $zone_id = json_decode($request->header('zoneId'), true);
         $products = ProductLogic::recommended_products(zone_id: $zone_id, restaurant_id: $request->restaurant_id, limit: $request['limit'], offset: $request['offset'], type: $type, name: $key);
-        $products['products'] = Helpers::product_data_formatting(data: $products['products'], multi_data: true, trans: false, local: app()->getLocale());
+        $products['products'] = Helpers::product_data_formatting(data: $products['products'], multi_data: false, trans: false, local: app()->getLocale());
         return response()->json($products, 200);
     }
 
@@ -361,59 +363,94 @@ class ProductController extends Controller
 
 
     public function food_or_restaurant_search(Request $request)
-    {
-        if (!$request->hasHeader('zoneId')) {
-            $errors = [];
-            array_push($errors, ['code' => 'zoneId', 'message' => translate('messages.zone_id_required')]);
-            return response()->json([
-                'errors' => $errors
-            ], 403);
-        }
-        if (!$request->hasHeader('longitude') || !$request->hasHeader('latitude')) {
-            $errors = [];
-            array_push($errors, ['code' => 'longitude-latitude', 'message' => translate('messages.longitude-latitude_required')]);
-            return response()->json([
-                'errors' => $errors
-            ], 403);
-        }
+{
+    Log::info('food_or_restaurant_search hit');
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required',
-        ]);
+    // Check headers
+    if (!$request->hasHeader('zoneId')) {
+        Log::error('ZoneId header missing');
+        $errors = [];
+        array_push($errors, ['code' => 'zoneId', 'message' => translate('messages.zone_id_required')]);
+        return response()->json(['errors' => $errors], 403);
+    }
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
-        }
+    if (!$request->hasHeader('longitude') || !$request->hasHeader('latitude')) {
+        Log::error('Longitude or latitude header missing');
+        $errors = [];
+        array_push($errors, ['code' => 'longitude-latitude', 'message' => translate('messages.longitude-latitude_required')]);
+        return response()->json(['errors' => $errors], 403);
+    }
 
-        $zone_id = json_decode($request->header('zoneId'), true);
-        $longitude = $request->header('longitude');
-        $latitude = $request->header('latitude');
+    // Validate request
+    $validator = Validator::make($request->all(), [
+        'name' => 'required',
+    ]);
 
-        $key = $request->name;
+    if ($validator->fails()) {
+        Log::error('Validation failed: ', $validator->errors()->toArray());
+        return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+    }
 
-        // Search foods using Meilisearch
+    $zone_id = json_decode($request->header('zoneId'), true);
+    $longitude = $request->header('longitude');
+    $latitude = $request->header('latitude');
+    $key = $request->name;
+
+    Log::info('Input data: ', [
+        'zone_id' => $zone_id,
+        'longitude' => $longitude,
+        'latitude' => $latitude,
+        'search_key' => $key
+    ]);
+
+    try {
+        // Search for foods matching the search term
         $foods = Food::search($key)
-            ->where('active', true)
-            ->whereIn('zone_id', $zone_id)
             ->take(50)
             ->get(['restaurant_id', 'name', 'image']);
 
-        $restaurants = Restaurant::search($key)
-            ->where('active', true)
-            ->whereIn('zone_id', $zone_id)
-            ->take(50)
-            ->get();
-        $restaurantIds = $restaurants->pluck('restaurant_id')->toArray();
+        Log::info('Food search result count: ' . $foods->count());
 
-        $restaurants = Restaurant::whereIn('restaurant_id', $restaurantIds)
-            ->withOpen($longitude, $latitude)
-            ->get();
+        // If no food matches the search term, return an empty response
+        if ($foods->isEmpty()) {
+            return response()->json(['restaurants' => []], 200);
+        }
 
-        return [
-            'foods' => $foods,
-            'restaurants' => $restaurants
-        ];
+        // Group foods by restaurant_id
+        $foodsByRestaurant = $foods->groupBy('restaurant_id');
+        $restaurantIds = $foodsByRestaurant->keys()->toArray();
+    } catch (\Exception $e) {
+        Log::error('Error during food search: ' . $e->getMessage());
+        return response()->json(['errors' => ['code' => 'food_search_error', 'message' => 'Error during food search']], 500);
     }
+
+    try {
+        // Fetch restaurants that have the matching restaurant IDs and belong to the specified zone_id
+        $restaurants = Restaurant::whereIn('restaurant_id', $restaurantIds)
+            ->where('zone_id', $zone_id) // Filter by zone_id
+            ->withOpen($longitude, $latitude)  // Optional: filter by open status
+            ->get();
+
+        Log::info('Restaurants fetched based on food restaurant IDs: ' . $restaurants->count());
+    } catch (\Exception $e) {
+        Log::error('Error fetching restaurants: ' . $e->getMessage());
+        return response()->json(['errors' => ['code' => 'restaurant_fetch_error', 'message' => 'Error fetching restaurants']], 500);
+    }
+
+    // Combine foods with their respective restaurants
+    $restaurantsWithFoods = $restaurants->map(function($restaurant) use ($foodsByRestaurant) {
+        // Attach the first food to the restaurant
+        $restaurant->foods = $foodsByRestaurant->get($restaurant->restaurant_id)->take(1); // Take only 1 food per restaurant
+        return $restaurant;
+    });
+
+    return response()->json([
+        'restaurants' => $restaurantsWithFoods
+    ]);
+}
+
+
+
 
 
 

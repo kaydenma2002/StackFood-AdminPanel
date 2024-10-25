@@ -4,7 +4,7 @@
         <td>
             <a class="media align-items-center" href="{{route('admin.food.view',[$food['id']])}}">
                 <img class="avatar avatar-lg mr-3 onerror-image"
-                     src="{{ $food['image_full_url'] ?? dynamicAsset('public/assets/admin/img/160x160/img2.jpg') }}"
+                     src="{{ asset('storage/product/' . $food['image']) }} ?? dynamicAsset('public/assets/admin/img/160x160/img2.jpg') }}"
                      data-onerror-image="{{dynamicAsset('public/assets/admin/img/160x160/img2.jpg')}}"
                      alt="{{ $food->name }} image">
                 <div class="media-body">

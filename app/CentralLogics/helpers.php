@@ -56,6 +56,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log as CountLog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Log\Logger;
 
 class Helpers
 {
@@ -117,100 +118,94 @@ class Helpers
     }
 
     public static function cart_product_data_formatting($data, $selected_variation, $selected_addons, $selected_addon_quantity, $trans = false, $local = 'en')
-    {
-        $variations = [];
-        $categories = [];
+{
+    $categories = collect();
 
-        // Ensure $data['category_ids'] is not null and contains valid data
-        if (!empty($data['category_ids'])) {
-            $category_ids = is_array($data['category_ids']) ? $data['category_ids'] : json_decode($data['category_ids'], true);
+    // Ensure $data['category_ids'] is not null and contains valid data
+    if (!empty($data['category_ids'])) {
+        $category_ids = is_array($data['category_ids']) ? $data['category_ids'] : json_decode($data['category_ids'], true);
 
-            if (is_array($category_ids)) {
-                foreach ($category_ids as $value) {
-                    $category_name = Category::where('id', $value['id'])->pluck('name');
-                    $categories[] = ['id' => (string)$value['id'], 'position' => $value['position'], 'name' => data_get($category_name, '0', 'NA')];
-                }
-            }
-        }
-        $data['category_ids'] = $categories;
+        // Fetch all categories in one query
+        $category_ids_array = array_column($category_ids, 'id');
+        $categories_data = Category::whereIn('id', $category_ids_array)->pluck('name', 'id')->toArray();
 
-        // Add-on data handling
-        $add_ons = !empty($data['add_ons']) && is_array($data['add_ons']) ? $data['add_ons'] : json_decode($data['add_ons'], true);
-        $data_addons = self::addon_data_formatting(AddOn::whereIn('id', $add_ons ?? [])->active()->get(), true, $trans, $local);
-        $selected_data = array_combine($selected_addons ?? [], $selected_addon_quantity ?? []);
-        foreach ($data_addons as &$addon) {
-            $addon_id = $addon['id'];
-            $addon['isChecked'] = in_array($addon_id, $selected_addons ?? []);
-            $addon['quantity'] = $addon['isChecked'] ? ($selected_data[$addon_id] ?? 0) : 0;
-        }
-        $data['addons'] = $data_addons;
-
-        // Handling common data fields
-        if (isset($data->title)) {
-            $data['name'] = $data->title;
-            unset($data['title']);
-        }
-        if (isset($data->start_time)) {
-            $data['available_time_starts'] = $data->start_time->format('H:i');
-            unset($data['start_time']);
-        }
-        if (isset($data->end_time)) {
-            $data['available_time_ends'] = $data->end_time->format('H:i');
-            unset($data['end_time']);
-        }
-        if (isset($data->start_date)) {
-            $data['available_date_starts'] = $data->start_date->format('Y-m-d');
-            unset($data['start_date']);
-        }
-        if (isset($data->end_date)) {
-            $data['available_date_ends'] = $data->end_date->format('Y-m-d');
-            unset($data['end_date']);
-        }
-
-        // Handling variations
-        $data_variation = !empty($data['variations']) ? (is_array($data['variations']) ? $data['variations'] : json_decode($data['variations'], true)) : [];
-        foreach ($selected_variation ?? [] as $item1) {
-            foreach ($data_variation as &$item2) {
-                if ($item1["name"] === $item2["name"]) {
-                    foreach ($item2["values"] as &$value) {
-                        $value["isSelected"] = in_array($value["label"], $item1["values"]["label"] ?? []);
-                    }
-                }
-            }
-        }
-        $data['variations'] = $data_variation;
-
-        // Restaurant-related data
-        $data['restaurant_name'] = $data->restaurant->name ?? '';
-        $data['restaurant_status'] = (int) ($data->restaurant->status ?? 0);
-        $data['restaurant_discount'] = self::get_restaurant_discount($data->restaurant) ? $data->restaurant->discount->discount : 0;
-        $data['restaurant_opening_time'] = $data->restaurant->opening_time ? $data->restaurant->opening_time->format('H:i') : null;
-        $data['restaurant_closing_time'] = $data->restaurant->closeing_time ? $data->restaurant->closeing_time->format('H:i') : null;
-        $data['schedule_order'] = $data->restaurant->schedule_order ?? 0;
-        $data['rating_count'] = (int) ($data->rating ? array_sum(json_decode($data->rating, true)) : 0);
-        $data['avg_rating'] = (float) ($data->avg_rating ?? 0);
-        $data['recommended'] = (int) ($data->recommended ?? 0);
-        $data['halal_tag_status'] = (int) ($data->restaurant->restaurant_config?->halal_tag_status ?? 0);
-        $data['free_delivery'] = (int) ($data->restaurant->free_delivery ?? 0);
-        $data['min_delivery_time'] = (int) explode('-', $data->restaurant->delivery_time)[0] ?? 0;
-        $data['max_delivery_time'] = (int) explode('-', $data->restaurant->delivery_time)[1] ?? 0;
-
-        // Cuisines
-        $cuisine = [];
-        $cui = $data->restaurant->load('cuisine');
-        if (isset($cui->cuisine)) {
-            foreach ($cui->cuisine as $cu) {
-                $cuisine[] = ['id' => (int) $cu->id, 'name' => $cu->name, 'image' => $cu->image];
-            }
-        }
-        $data['cuisines'] = $cuisine;
-
-        // Remove unwanted data
-        unset($data['restaurant']);
-        unset($data['rating']);
-
-        return $data;
+        // Map over the category_ids to format them
+        $categories = collect($category_ids)->map(function ($value) use ($categories_data) {
+            return [
+                'id' => (string) $value['id'],
+                'position' => $value['position'],
+                'name' => $categories_data[$value['id']] ?? 'NA'
+            ];
+        })->unique('id');
     }
+    $data['category_ids'] = $categories->toArray();
+
+    // Add-on data handling
+    $add_ons = !empty($data['add_ons']) && is_array($data['add_ons']) ? $data['add_ons'] : json_decode($data['add_ons'], true);
+
+    // Bulk fetch addons instead of querying in the loop
+    $addons_data = AddOn::whereIn('id', $add_ons ?? [])->active()->get()->keyBy('id');
+
+    $selected_data = array_combine($selected_addons ?? [], $selected_addon_quantity ?? []);
+
+    // Map over the add-ons to format them
+    $data['addons'] = $addons_data->map(function ($addon) use ($selected_addons, $selected_data) {
+        $addon['isChecked'] = in_array($addon->id, $selected_addons ?? []);
+        $addon['quantity'] = $addon['isChecked'] ? ($selected_data[$addon->id] ?? 0) : 0;
+        return $addon;
+    })->toArray();
+
+    // Handling common data fields
+    $data['name'] = $data->title ?? $data['name'];
+    $data['available_time_starts'] = isset($data->available_time_starts) ? $data->available_time_starts: null;
+    $data['available_time_ends'] = isset($data->available_time_ends) ? $data->available_time_ends : null;
+    $data['available_date_starts'] = isset($data->start_date) ? $data->start_date->format('Y-m-d') : null;
+    $data['available_date_ends'] = isset($data->end_date) ? $data->end_date->format('Y-m-d') : null;
+
+    // Handling variations
+    $data_variation = !empty($data['variations']) ? (is_array($data['variations']) ? $data['variations'] : json_decode($data['variations'], true)) : [];
+    $data['variations'] = collect($data_variation)->map(function ($item2) use ($selected_variation) {
+        $item2['values'] = collect($item2['values'])->map(function ($value) use ($item2, $selected_variation) {
+            $selected_variation_item = collect($selected_variation)->firstWhere('name', $item2['name']);
+            $value['isSelected'] = in_array($value['label'], $selected_variation_item['values']['label'] ?? []);
+            return $value;
+        })->toArray();
+        return $item2;
+    })->toArray();
+
+    // Restaurant-related data
+    $data['restaurant_name'] = $data->restaurant->name ?? '';
+    $data['restaurant_status'] = (int) ($data->restaurant->status ?? 0);
+    $data['restaurant_discount'] = self::get_restaurant_discount($data->restaurant) ? $data->restaurant->discount->discount : 0;
+    $data['restaurant_opening_time'] = $data->restaurant->opening_time ? $data->restaurant->opening_time->format('H:i') : null;
+    $data['restaurant_closing_time'] = $data->restaurant->closing_time ? $data->restaurant->closing_time->format('H:i') : null;
+    $data['schedule_order'] = $data->restaurant->schedule_order ?? 0;
+    $data['rating_count'] = (int) ($data->rating ? array_sum(json_decode($data['rating'], true)) : 0);
+    $data['avg_rating'] = (float) ($data['avg_rating'] ?? 0);
+    $data['recommended'] = (int) ($data['recommended'] ?? 0);
+    $data['halal_tag_status'] = (int) ($data->restaurant->restaurant_config?->halal_tag_status ?? 0);
+    $data['free_delivery'] = (int) ($data->restaurant->free_delivery ?? 0);
+    $data['min_delivery_time'] = (int) explode('-', $data->restaurant->delivery_time)[0] ?? 0;
+    $data['max_delivery_time'] = (int) explode('-', $data->restaurant->delivery_time)[1] ?? 0;
+
+    // Cuisines
+    $data['cuisines'] = $data->restaurant->cuisine->map(function ($cuisine) {
+        return [
+            'id' => (int) $cuisine->id,
+            'name' => $cuisine->name,
+            'image' => $cuisine->image
+        ];
+    })->unique('id')->toArray();
+
+    // Remove unwanted data
+    unset($data['restaurant']);
+    unset($data['rating']);
+
+    return $data;
+}
+
+
+
 
 
 
@@ -231,23 +226,22 @@ class Helpers
             if ($multi_data) {
                 if ($data instanceof Collection) {
                     $data->load([
-                        'restaurant.discount',
+                        'restaurant.discount', // Load discount along with restaurant
                         'restaurant.cuisine',
                         'restaurant.restaurant_sub',
                         'restaurant.restaurant_config'
                     ]);
                 }
 
-                $storage = [];
-                foreach ($data as $item) {
-                    $item = self::format_single_product($item, $trans, $local);
-                    array_push($storage, $item);
-                }
-                return $storage;
+                $storage = $data->map(function ($item) use ($trans, $local) {
+                    return self::format_single_product($item, $trans, $local);
+                });
+
+                return $storage->all();
             } else {
                 if ($data instanceof Model) {
                     $data->load([
-                        'restaurant.discount',
+                        'restaurant.discount', // Load discount along with restaurant
                         'restaurant.cuisine',
                         'restaurant.restaurant_sub',
                         'restaurant.restaurant_config'
@@ -257,6 +251,7 @@ class Helpers
             }
         });
     }
+
 
     private static function generateCacheKey($data, $multi_data, $trans, $local)
     {
@@ -272,19 +267,23 @@ class Helpers
 
     private static function format_single_product($item, $trans, $local)
     {
-        // Formatting logic (same as before)
-        // ...
 
-        // Example for checking and formatting:
         if ($item instanceof Model) {
             $restaurant = $item->restaurant;
 
             // Access restaurant-related data (already eager-loaded)
             $item['restaurant_name'] = $restaurant->name;
             $item['restaurant_status'] = (int) $restaurant->status;
-            $restaurantDiscount = self::get_restaurant_discount($restaurant);
 
-            $item['restaurant_discount'] = $restaurantDiscount ? $restaurantDiscount['discount'] : 0;
+            // Access the already loaded discount data
+            $discount = $restaurant->discount;
+
+            if ($discount && now()->between($discount->start_date, $discount->end_date)) {
+                $item['restaurant_discount'] = $discount->discount;
+            } else {
+                $item['restaurant_discount'] = 0;
+            }
+
             $item['restaurant_opening_time'] = $restaurant->opening_time ? $restaurant->opening_time->format('H:i') : null;
             $item['restaurant_closing_time'] = $restaurant->closing_time ? $restaurant->closing_time->format('H:i') : null;
             $item['schedule_order'] = $restaurant->schedule_order;
@@ -298,6 +297,7 @@ class Helpers
 
         return $item;
     }
+
 
 
 
@@ -678,8 +678,10 @@ class Helpers
 
                         // Calculate ratings
                         $reviewsInfo = $item->reviews->groupBy('food.restaurant_id')->first();
-                        $item['avg_rating'] = (float) ($reviewsInfo->average_rating ?? 0);
-                        $item['rating_count'] = (int) ($reviewsInfo->total_reviews ?? 0);
+                        $reviewsInfo = collect($reviewsInfo);
+
+                        $item['avg_rating'] = (float) $reviewsInfo->avg('rating') ?? 0;
+                        $item['rating_count'] = (int) ($reviewsInfo->count() ?? 0);
                         $item['positive_rating'] = (int) RestaurantLogic::calculate_positive_rating($item['rating'])['rating'];
 
                         // Additional configurations
@@ -725,8 +727,8 @@ class Helpers
 
                     // Calculate ratings
                     $reviewsInfo = $data->reviews->groupBy('food.restaurant_id')->first();
-                    $data['avg_rating'] = (float) ($reviewsInfo->average_rating ?? 0);
-                    $data['rating_count'] = (int) ($reviewsInfo->total_reviews ?? 0);
+                    $data['avg_rating'] = (float) ($reviewsInfo->avg('rating') ?? 0);
+                    $data['rating_count'] = (int) ($reviewsInfo->count() ?? 0);
                     $data['positive_rating'] = (int) RestaurantLogic::calculate_positive_rating($data['rating'])['rating'];
 
                     // Additional configurations
@@ -1459,9 +1461,9 @@ class Helpers
 
     public static function send_order_notification($order)
     {
-        $order = Order::where('id', $order->id)->with('zone:id,deliveryman_wise_topic', 'restaurant:id,name,restaurant_model,self_delivery_system,vendor_id', 'restaurant.restaurant_sub', 'customer:id,cm_firebase_token,email,f_name,l_name,current_language_key', 'restaurant.vendor:id,firebase_token', 'delivery_man:id,fcm_token', 'guest')->first();
+        $order = Order::where('id', $order->id)->with('zone:id,deliveryman_wise_topic', 'restaurant:restaurant_id,name,restaurant_model,self_delivery_system,vendor_id', 'restaurant.restaurant_sub', 'customer:id,cm_firebase_token,email,f_name,l_name,current_language_key', 'restaurant.vendor:id,firebase_token', 'delivery_man:id,fcm_token', 'guest')->first();
         $push_notification_status = self::getNotificationStatusData('restaurant', 'restaurant_order_notification');
-        $restaurant_push_notification_status = self::getRestaurantNotificationStatusData($order?->restaurant?->id, 'restaurant_order_notification');
+        $restaurant_push_notification_status = self::getRestaurantNotificationStatusData($order?->restaurant?->restaurant_id, 'restaurant_order_notification');
 
         try {
             $status = ($order->order_status == 'delivered' && $order->delivery_man) ? 'delivery_boy_delivered' : $order->order_status;
@@ -1806,7 +1808,7 @@ class Helpers
         if (auth('vendor_employee')->check()) {
             return auth('vendor_employee')->user()->restaurants->restaurant_id;
         }
-
+        CountLog::info('auth vendor' . auth('vendor')->user());
         return auth('vendor')->user()->restaurants[0]->restaurant_id;
     }
 

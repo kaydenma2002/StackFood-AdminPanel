@@ -54,7 +54,7 @@ class CustomerAuthController extends Controller
                     $user->save();
 
                     return response()->json([
-                        'message' => translate('messages.phone_number_varified_successfully'),
+                        'message' => translate('messages.phone_number_verified_successfully'),
                         'otp' => 'inactive'
                     ], 200);
                 }
@@ -78,7 +78,7 @@ class CustomerAuthController extends Controller
                 $user->is_phone_verified = 1;
                 $user->save();
                 return response()->json([
-                    'message' => translate('messages.phone_number_varified_successfully'),
+                    'message' => translate('messages.phone_number_verified_successfully'),
                     'otp' => 'inactive'
                 ], 200);
             }

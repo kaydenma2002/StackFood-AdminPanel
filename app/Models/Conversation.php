@@ -15,7 +15,15 @@ class Conversation extends Model
         'last_message_id' => 'integer',
         'unread_message_count' => 'integer'
     ];
-
+    protected $fillable = [
+        'sender_id',
+        'sender_type', // Ensure this is present
+        'receiver_id',
+        'receiver_type',
+        'unread_message_count',
+        'last_message_time',
+        'last_message_id'
+    ];
     public function messages()
     {
         return $this->hasMany(Message::class, 'conversation_id');

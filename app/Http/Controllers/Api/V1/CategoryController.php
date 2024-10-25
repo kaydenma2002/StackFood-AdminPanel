@@ -19,99 +19,99 @@ class CategoryController extends Controller
     public function get_categories(Request $request)
     {
         try {
-            // Retrieve default values or use fallback
-            $category_list_default_status = Cache::remember('category_list_default_status', 60, function () {
-                return BusinessSetting::where('key', 'category_list_default_status')->first()->value ?? 1;
-            });
+            // Fetching settings
+            $settings = BusinessSetting::whereIn('key', ['category_list_default_status', 'category_list_sort_by_general'])
+                ->pluck('value', 'key')
+                ->toArray();
 
-            $category_list_sort_by_general = Cache::remember('category_list_sort_by_general', 60, function () {
-                return PriorityList::where('name', 'category_list_sort_by_general')->where('type', 'general')->first()->value ?? '';
-            });
+            $category_list_default_status = $settings['category_list_default_status'] ?? 1;
+            $category_list_sort_by_general = $settings['category_list_sort_by_general'] ?? '';
 
-            $zone_id = $request->header('zoneId') ? json_decode($request->header('zoneId'), true) : [];
+            $zone_id = json_decode($request->header('zoneId'), true) ?? [];
             $name = $request->query('name');
 
-            // Build the query for categories
-            $categoriesQuery = Category::withCount(['products', 'childes'])
-                ->with(['childes' => function ($query) {
-                    $query->withCount(['products', 'childes']);
-                }])
-                ->where(['position' => 0, 'status' => 1]);
+            // Generate a cache key based on the query parameters
+            $cacheKey = 'categories_' . md5(json_encode([
+                'zone_id' => $zone_id,
+                'name' => $name,
+                'category_list_default_status' => $category_list_default_status,
+                'category_list_sort_by_general' => $category_list_sort_by_general,
+            ]));
 
-            // Apply search filter if a name is provided
-            if ($name) {
-                $key = explode(' ', $name);
-                $categoriesQuery->where(function ($query) use ($key) {
-                    foreach ($key as $value) {
-                        $query->orWhere('name', 'like', '%' . $value . '%')
-                            ->orWhere('slug', 'like', '%' . $value . '%');
-                    }
-                });
-            }
+            // Cache for 10 minutes (or any duration you prefer)
+            $categories = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($category_list_default_status, $category_list_sort_by_general, $zone_id, $name) {
+                $query = Category::withCount(['products', 'childes'])
+                    ->with(['childes' => function($query) {
+                        $query->withCount(['products', 'childes']);
+                    }])
+                    ->where(['position' => 0, 'status' => 1]);
 
-            // Apply sorting based on the default status and priority
-            if ($category_list_default_status == 1) {
-                $categoriesQuery->orderBy('priority', 'desc');
-            } else {
-                switch ($category_list_sort_by_general) {
-                    case 'latest':
-                        $categoriesQuery->latest();
-                        break;
-                    case 'oldest':
-                        $categoriesQuery->oldest();
-                        break;
-                    case 'a_to_z':
-                        $categoriesQuery->orderBy('name');
-                        break;
-                    case 'z_to_a':
-                        $categoriesQuery->orderBy('name', 'desc');
-                        break;
-                    case 'order_count':
-                        // We handle this sorting later after fetching data
-                        break;
-                }
-            }
-
-            // Get the count of categories matching the conditions
-            $totalCategories = $categoriesQuery->count();
-
-            // Calculate a random offset
-            $randomOffset = max(0, $totalCategories - 20);
-            $randomOffset = rand(0, $randomOffset);
-
-            // Retrieve the categories with limit and random offset
-            $categories = $categoriesQuery->skip($randomOffset)->take(20)->get();
-
-            // Optional: Shuffle categories in PHP to ensure randomness
-            $categories = $categories->shuffle();
-
-            if (count($zone_id) > 0) {
-                $categories->load(['products' => function ($query) use ($zone_id) {
-                    $query->whereHas('restaurant', function ($query) use ($zone_id) {
-                        $query->whereIn('zone_id', $zone_id);
+                // Filter by name if provided
+                if ($name) {
+                    $keywords = explode(' ', $name);
+                    $query->where(function($q) use ($keywords) {
+                        foreach ($keywords as $value) {
+                            $q->orWhere('name', 'like', "%{$value}%")
+                              ->orWhere('slug', 'like', "%{$value}%");
+                        }
                     });
-                }]);
-
-                foreach ($categories as $category) {
-                    $productCount = $category->products->count();
-                    $orderCount = $category->products->sum('order_count');
-
-                    $category->products_count = $productCount;
-                    $category->order_count = $orderCount;
                 }
+
+                // Apply sorting based on settings
+                if ($category_list_default_status == 1) {
+                    $query->orderBy('priority', 'desc');
+                } else {
+                    switch ($category_list_sort_by_general) {
+                        case 'latest':
+                            $query->latest();
+                            break;
+                        case 'oldest':
+                            $query->oldest();
+                            break;
+                        case 'a_to_z':
+                            $query->orderBy('name');
+                            break;
+                        case 'z_to_a':
+                            $query->orderBy('name', 'desc');
+                            break;
+                    }
+                }
+
+                return $query->get();
+            });
+
+            // If zone_id is provided, calculate product count and order count
+            if (count($zone_id) > 0) {
+                $categories = $categories->map(function ($category) use ($zone_id) {
+                    $productAndOrderCount = Food::active()
+                        ->whereHas('restaurant', function ($query) use ($zone_id) {
+                            $query->whereIn('zone_id', $zone_id);
+                        })
+                        ->whereHas('category', function($q) use ($category) {
+                            return $q->whereId($category->id)->orWhere('parent_id', $category->id);
+                        })
+                        ->selectRaw('COUNT(*) as product_count, SUM(order_count) as total_order_count')
+                        ->first();
+
+                    $category->products_count = $productAndOrderCount->product_count ?? 0;
+                    $category->order_count = $productAndOrderCount->total_order_count ?? 0;
+
+                    return $category;
+                });
 
                 if ($category_list_default_status != 1 && $category_list_sort_by_general == 'order_count') {
-                    $categories = $categories->sortByDesc('order_count')->values()->all();
+                    $categories = $categories->sortByDesc('order_count')->values();
                 }
+
+                return response()->json($categories, 200);
             }
 
-            return response()->json(Helpers::category_data_formatting($categories, true), 200);
+            return response()->json(Helpers::category_data_formatting($categories, false), 200);
         } catch (\Exception $e) {
-            // Consider logging the error for debugging
-            \Log::error('Error fetching categories: ' . $e->getMessage());
-            return response()->json(['error' => 'An error occurred while fetching categories.'], 500);
+            return response()->json([$e->getMessage()]);
         }
     }
+
 
 
     public function get_childes($id)

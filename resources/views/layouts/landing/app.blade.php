@@ -165,7 +165,7 @@
                 @endif
 
 
-                @if ((isset($toggle_dm_registration)  && $toggle_dm_registration )|| (isset($toggle_restaurant_registration) && $toggle_restaurant_registration))
+
                 <div class="position-relative">
                     <a class="dropdown--btn btn-base" href="javascript:void(0)">
                         <span>{{ translate('Join us') }}</span>
@@ -176,19 +176,15 @@
                         </svg>
                     </a>
                     <ul class="dropdown-list">
-                        @if ($toggle_restaurant_registration)
+
                         <li>
                             <a href="{{ route('restaurant.create') }}"> {{ translate('messages.join_as_restaurant') }}</a>
                         </li>
-                        @endif
-                        @if ($toggle_dm_registration)
-                        <li>
-                            <a href="{{ route('deliveryman.create') }}">{{ translate('messages.join_as_deliveryman') }}</a>
-                        </li>
-                        @endif
+
+
                     </ul>
                 </div>
-                @endif
+
             </div>
         </div>
     </header>

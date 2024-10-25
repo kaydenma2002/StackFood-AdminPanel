@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use App\Models\VariationOption;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class CartController extends Controller
@@ -34,8 +35,10 @@ class CartController extends Controller
             $data->add_on_ids = json_decode($data->add_on_ids,true);
             $data->add_on_qtys = json_decode($data->add_on_qtys,true);
             $data->variations = json_decode($data->variations,true);
-			$data->item = Helpers::cart_product_data_formatting($data->item, $data->variations,$data->add_on_ids,
+			Log::info('data: ' .  $data->item);
+            $data->item = Helpers::cart_product_data_formatting($data->item, $data->variations,$data->add_on_ids,
             $data->add_on_qtys, false, app()->getLocale());
+
 			return $data;
 		});
         return response()->json($carts, 200);
@@ -71,41 +74,41 @@ class CartController extends Controller
         ->where('is_guest', $is_guest)
         ->first();
 
-    if ($cart) {
-        return response()->json([
-            'errors' => [
-                ['code' => 'cart_item', 'message' => translate('messages.Item_already_exists')]
-            ]
-        ], 403);
-    }
+    // if ($cart) {
+    //     return response()->json([
+    //         'errors' => [
+    //             ['code' => 'cart_item', 'message' => translate('messages.Item_already_exists')]
+    //         ]
+    //     ], 403);
+    // }
 
-    // Check for maximum cart quantity
-    if ($item?->maximum_cart_quantity && ($request->quantity > $item->maximum_cart_quantity)) {
-        return response()->json([
-            'errors' => [
-                ['code' => 'cart_item_limit', 'message' => translate('messages.maximum_cart_quantity_exceeded')]
-            ]
-        ], 403);
-    }
+    // // Check for maximum cart quantity
+    // if ($item?->maximum_cart_quantity && ($request->quantity > $item->maximum_cart_quantity)) {
+    //     return response()->json([
+    //         'errors' => [
+    //             ['code' => 'cart_item_limit', 'message' => translate('messages.maximum_cart_quantity_exceeded')]
+    //         ]
+    //     ], 403);
+    // }
 
-    // Additional stock checks for 'Food' model
-    if ($request->model === 'Food') {
-        $addonAndVariationStock = Helpers::addonAndVariationStockCheck(
-            product: $item,
-            quantity: $request->quantity,
-            add_on_qtys: $request->add_on_qtys,
-            variation_options: $request?->variation_options,
-            add_on_ids: $request->add_on_ids
-        );
+    // // Additional stock checks for 'Food' model
+    // if ($request->model === 'Food') {
+    //     $addonAndVariationStock = Helpers::addonAndVariationStockCheck(
+    //         product: $item,
+    //         quantity: $request->quantity,
+    //         add_on_qtys: $request->add_on_qtys,
+    //         variation_options: $request?->variation_options,
+    //         add_on_ids: $request->add_on_ids
+    //     );
 
-        if (data_get($addonAndVariationStock, 'out_of_stock') != null) {
-            return response()->json([
-                'errors' => [
-                    ['code' => 'stock_out', 'message' => data_get($addonAndVariationStock, 'out_of_stock')]
-                ]
-            ], 403);
-        }
-    }
+    //     if (data_get($addonAndVariationStock, 'out_of_stock') != null) {
+    //         return response()->json([
+    //             'errors' => [
+    //                 ['code' => 'stock_out', 'message' => data_get($addonAndVariationStock, 'out_of_stock')]
+    //             ]
+    //         ], 403);
+    //     }
+    // }
 
     // Create and save the cart item
     $cart = new Cart();
@@ -124,7 +127,8 @@ class CartController extends Controller
     // Associate cart item with the product
     $item->carts()->save($cart);
 
-    // Retrieve and format all cart items for the user
+
+
     $carts = Cart::where('user_id', $user_id)
         ->where('is_guest', $is_guest)
         ->get()
@@ -144,7 +148,7 @@ class CartController extends Controller
 
             return $data;
         });
-
+        Log::info('carts' .$carts);
     return response()->json($carts, 200);
 }
 

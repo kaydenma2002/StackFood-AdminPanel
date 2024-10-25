@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\ReportFilter;
 use Laravel\Scout\Searchable;
-
+use Illuminate\Support\Facades\Log as Logger;
 class Restaurant extends Model
 {
 
@@ -164,11 +164,11 @@ class Restaurant extends Model
     }
     public function restaurant_sub_trans()
     {
-        return $this->hasOne(SubscriptionTransaction::class)->latest();
+        return $this->hasOne(SubscriptionTransaction::class, 'restaurant_id', 'restaurant_id')->latest();
     }
     public function restaurant_sub_update_application()
     {
-        return $this->hasOne(RestaurantSubscription::class)->latest();
+        return $this->hasOne(RestaurantSubscription::class, 'restaurant_id', 'restaurant_id')->latest();
     }
 
 
@@ -302,6 +302,7 @@ class Restaurant extends Model
 
     public function scopeWithOpen($query, $longitude, $latitude)
     {
+
         $query->selectRaw('*, IF(((select count(*) from `restaurant_schedule` where `restaurants`.`restaurant_id` = `restaurant_schedule`.`restaurant_id` and `restaurant_schedule`.`day` = ' . now()->dayOfWeek . ' and `restaurant_schedule`.`opening_time` < "' . now()->format('H:i:s') . '" and `restaurant_schedule`.`closing_time` >"' . now()->format('H:i:s') . '") > 0), true, false) as open, ST_Distance_Sphere(point(longitude, latitude),point(' . $longitude . ', ' . $latitude . ')) as distance');
     }
 
@@ -405,7 +406,6 @@ class Restaurant extends Model
                     'updated_at' => now(),
                 ]);
             }
-
         });
     }
 
@@ -475,15 +475,15 @@ class Restaurant extends Model
 
     protected static function booted()
     {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-        static::addGlobalScope(new ZoneScope);
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
+        // static::addGlobalScope('storage', function ($builder) {
+        //     $builder->with('storage');
+        // });
+        // static::addGlobalScope(new ZoneScope);
+        // static::addGlobalScope('translate', function (Builder $builder) {
+        //     $builder->with(['translations' => function ($query) {
+        //         return $query->where('locale', app()->getLocale());
+        //     }]);
+        // });
     }
     public function toSearchableArray()
     {

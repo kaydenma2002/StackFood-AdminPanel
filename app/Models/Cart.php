@@ -36,4 +36,11 @@ class Cart extends Model
     {
         return $this->morphTo();
     }
+    public function getAddonsAttribute()
+    {
+        $addOnIds = json_decode($this->add_on_ids, true);  // Assuming it's stored as JSON
+
+        // If add_on_ids is an array, retrieve the corresponding AddOn records
+        return AddOn::whereIn('id', $addOnIds)->get();
+    }
 }

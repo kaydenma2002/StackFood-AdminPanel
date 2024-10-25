@@ -44,11 +44,13 @@ return [
 
         'beanstalkd' => [
             'driver' => 'beanstalkd',
-            'host' => 'localhost',
-            'queue' => 'default',
+            'host' => env('QUEUE_HOST', '127.0.0.1'),
+            'port' => env('QUEUE_PORT', 11300),
+            'timeout' => 90,
+            'ttr' => 60, // Time To Run for a job
+            'queue' => env('QUEUE_NAME', 'default'),
             'retry_after' => 90,
             'block_for' => 0,
-            'after_commit' => false,
         ],
 
         'sqs' => [

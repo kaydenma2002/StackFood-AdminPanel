@@ -461,7 +461,7 @@ $max_processing_time = $order->restaurant?explode('-', $order->restaurant['deliv
                                                             <span class="avatar-status avatar-lg-status avatar-status-dark"><i
                                                                     class="tio-edit"></i></span>
                                                                 <img class="img-fluid rounded onerror-image"
-                                                                     src="{{ $food['image_full_url'] ?? dynamicAsset('public/assets/admin/img/100x100/food-default-image.png') }}"
+                                                                     src="{{ asset('storage/product/' . $food['image']) }} ?? dynamicAsset('public/assets/admin/img/100x100/food-default-image.png') }}"
                                                                      data-onerror-image="{{dynamicAsset('public/assets/admin/img/100x100/food-default-image.png')}}"
                                                                 alt="Image Description">
                                                         @endif
@@ -471,7 +471,7 @@ $max_processing_time = $order->restaurant?explode('-', $order->restaurant['deliv
                                                                 <a class="avatar avatar-xl mr-3"
                                                                 href="{{ route('admin.food.view', $detail->food['id']) }}">
                                                                     <img class="img-fluid rounded onerror-image"
-                                                                        src="{{ $food['image_full_url'] ?? dynamicAsset('public/assets/admin/img/100x100/food-default-image.png') }}"
+                                                                        src="{{ asset('storage/product/' . $food['image']) }} ?? dynamicAsset('public/assets/admin/img/100x100/food-default-image.png') }}"
                                                                         data-onerror-image="{{dynamicAsset('public/assets/admin/img/100x100/food-default-image.png')}}"
                                                                         alt="Image Description">
                                                                     </a>
@@ -1438,7 +1438,7 @@ $max_processing_time = $order->restaurant?explode('-', $order->restaurant['deliv
                                         </h5>
                                         <!-- End Header -->
                                         <a class="media align-items-center deco-none restaurant--information-single"
-                                            href="{{ route('admin.restaurant.view', [$order->restaurant['id']]) }}">
+                                            href="{{ route('admin.restaurant.view', [$order->restaurant['restaurant_id']]) }}">
                                             <div class="avatar avatar-circle">
                                                     <img class="avatar-img w-75px"
                                                     src="{{ $order?->restaurant?->logo_full_url ?? dynamicAsset('public/assets/admin/img/100x100/restaurant-default-image.png') }}"

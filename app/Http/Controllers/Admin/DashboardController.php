@@ -212,105 +212,134 @@ class DashboardController extends Controller
 
 
     public function dashboard_data()
-    {
-        $params = session('dash_params');
-        $data_os = self::order_stats_calc($params['zone_id']);
-        $data_uo = self::user_overview_calc($params['zone_id']);
-        $business_name = Cache::remember('business_name', 60*60, function() {
-            return BusinessSetting::where('key', 'business_name')->first()->value ?? 'Dashboard';
-        });
-        $popular = Wishlist::with(['restaurant'])
-            ->whereHas('restaurant')
-            ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
-                return $q->whereHas('restaurant', function ($query) use ($params) {
-                    return $query->where('zone_id', $params['zone_id']);
-                });
-            })
-            ->select('restaurant_id', DB::raw('COUNT(restaurant_id) as count'))->groupBy('restaurant_id')->orderBy('count', 'DESC')->limit(12)->get();
+{
 
-        $top_sell = Food::withoutGlobalScopes([ZoneScope::class])
-            ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
-                return $q->whereHas('restaurant', function ($query) use ($params) {
-                    return $query->where('zone_id', $params['zone_id']);
-                });
-            })
-            ->orderBy("order_count", 'desc')
-            ->take(6)
-            ->get();
-        $top_rated_foods = Food::withoutGlobalScopes([ZoneScope::class])
-            ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
-                return $q->whereHas(['restaurant', 'orders'], function ($query) use ($params) {
-                    return $query->where('zone_id', $params['zone_id']);
-                });
-            })
-            ->where('avg_rating', '>', 0)
-            ->orderBy('avg_rating', 'desc')
-            ->orderBy('rating_count', 'desc')
-            ->limit(6)
-            ->get();
+    $params = session('dash_params');
+    $data_os = self::order_stats_calc($params['zone_id']);
+    $data_uo = self::user_overview_calc($params['zone_id']);
+    $business_name = Cache::remember('business_name', 60 * 60, function() {
+        return BusinessSetting::where('key', 'business_name')->first()->value ?? 'Dashboard';
+    });
 
-        $top_deliveryman = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
+    // Debugging Wishlist with Restaurant
+    $popular = Wishlist::with(['restaurant'])
+        ->whereHas('restaurant')
+        ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
+            return $q->whereHas('restaurant', function ($query) use ($params) {
+                return $query->where('zone_id', $params['zone_id']);
+            });
+        })
+        ->select('restaurant_id', DB::raw('COUNT(restaurant_id) as count'))
+        ->groupBy('restaurant_id')
+        ->orderBy('count', 'DESC')
+        ->limit(12);
+
+    // Debug popular query
+
+
+    $popular = $popular->get();
+
+    // Debugging Top Selling Foods
+    $top_sell = Food::withoutGlobalScopes([ZoneScope::class])
+        ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
+            return $q->whereHas('restaurant', function ($query) use ($params) {
+                return $query->where('zone_id', $params['zone_id']);
+            });
+        })
+        ->orderBy("order_count", 'desc')
+        ->take(6);
+
+    // Debug top_sell query
+
+
+    $top_sell = $top_sell->get();
+
+    // Debugging Top Rated Foods
+    $top_rated_foods = Food::withoutGlobalScopes([ZoneScope::class])
+    ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
+        return $q->whereHas('restaurant', function ($query) use ($params) {
+            return $query->where('zone_id', $params['zone_id']);
+        })->whereHas('orders');  // Separate whereHas for 'orders'
+    })
+    ->where('avg_rating', '>', 0)
+    ->orderBy('avg_rating', 'desc')
+    ->orderBy('rating_count', 'desc')
+    ->limit(6)
+    ->get();
+
+    // Debugging Top Deliveryman
+    $top_deliveryman = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
+        return $q->where('zone_id', $params['zone_id']);
+    })
+    ->where('type', 'zone_wise')
+    ->orderBy("order_count", 'desc')
+    ->take(6);
+
+    // Debug top_deliveryman query
+
+
+    $top_deliveryman = $top_deliveryman->get();
+
+    // Debugging Top Restaurants
+    $top_restaurants = Restaurant::when(is_numeric($params['zone_id']), function ($q) use ($params) {
+        return $q->where('zone_id', $params['zone_id']);
+    })
+    ->orderBy("order_count", 'desc')
+    ->take(6);
+
+    // Debug top_restaurants query
+
+
+    $top_restaurants = $top_restaurants->get();
+
+    $total_sell = [];
+    $commission = [];
+    $total_subs = [];
+
+    // Loop to get total sell, commission, and subscriptions for each month
+    for ($i = 1; $i <= 12; $i++) {
+        $total_sell[$i] = OrderTransaction::NotRefunded()
+            ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
                 return $q->where('zone_id', $params['zone_id']);
             })
-            ->where('type', 'zone_wise')
-            ->orderBy("order_count", 'desc')
-            ->take(6)
-            ->get();
+            ->whereMonth('created_at', $i)
+            ->whereYear('created_at', now()->format('Y'))
+            ->sum('order_amount');
 
-        $top_restaurants = Restaurant::when(is_numeric($params['zone_id']), function ($q) use ($params) {
+        $total_subs[$i] = SubscriptionTransaction::whereMonth('created_at', $i)
+            ->whereYear('created_at', now()->format('Y'))
+            ->sum('paid_amount');
+
+        $commission[$i] = OrderTransaction::NotRefunded()
+            ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
                 return $q->where('zone_id', $params['zone_id']);
             })
-            ->orderBy("order_count", 'desc')
-            ->take(6)
-            ->get();
+            ->whereMonth('created_at', $i)
+            ->whereYear('created_at', now()->format('Y'))
+            ->sum(DB::raw('admin_commission + admin_expense - delivery_fee_comission'));
 
-        $total_sell = [];
-        $commission = [];
-        $total_subs = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $total_sell[$i] = OrderTransaction::NotRefunded()
-                ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
-                    return $q->where('zone_id', $params['zone_id']);
-                })
-                ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                ->sum('order_amount');
-
-
-            $total_subs[$i] = SubscriptionTransaction::
-                // ->when(is_numeric($params['zone_id']), function($q)use($params){
-                //     return $q->where('zone_id', $params['zone_id']);
-                // })
-                whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                ->sum('paid_amount');
-
-
-
-            $commission[$i] = OrderTransaction::NotRefunded()
-                ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
-                    return $q->where('zone_id', $params['zone_id']);
-                })
-                ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                // ->sum('admin_commission');
-                ->sum(DB::raw('admin_commission + admin_expense - delivery_fee_comission'));
-
-            $commission[$i] += OrderTransaction::NotRefunded()
-                ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
-                    return $q->where('zone_id', $params['zone_id']);
-                })
-                ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                ->sum('delivery_fee_comission');
-        }
-
-        $dash_data = array_merge($data_os, $data_uo);
-        $dash_data['popular'] = $popular;
-        $dash_data['top_sell'] = $top_sell;
-        $dash_data['top_rated_foods'] = $top_rated_foods;
-        $dash_data['top_deliveryman'] = $top_deliveryman;
-        $dash_data['top_restaurants'] = $top_restaurants;
-        $dash_data['total_sell'] = $total_sell;
-        $dash_data['total_subs'] = $total_subs;
-        $dash_data['commission'] = $commission;
-        $dash_data['business_name'] = $business_name;
-        return $dash_data;
+        $commission[$i] += OrderTransaction::NotRefunded()
+            ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->where('zone_id', $params['zone_id']);
+            })
+            ->whereMonth('created_at', $i)
+            ->whereYear('created_at', now()->format('Y'))
+            ->sum('delivery_fee_comission');
     }
+
+    // Merge the order stats and user overview
+    $dash_data = array_merge($data_os, $data_uo);
+    $dash_data['popular'] = $popular;
+    $dash_data['top_sell'] = $top_sell;
+    $dash_data['top_rated_foods'] = $top_rated_foods;
+    $dash_data['top_deliveryman'] = $top_deliveryman;
+    $dash_data['top_restaurants'] = $top_restaurants;
+    $dash_data['total_sell'] = $total_sell;
+    $dash_data['total_subs'] = $total_subs;
+    $dash_data['commission'] = $commission;
+    $dash_data['business_name'] = $business_name;
+
+    return $dash_data;
+}
+
 }

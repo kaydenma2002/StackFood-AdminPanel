@@ -93,11 +93,17 @@
                     </li>
                     <li class="nav-item">
                         <!-- Notification -->
-                        <div class="hs-unfold">
-                            <a class="js-hs-unfold-invoker btn btn-icon navbar--cart btn-soft-secondary rounded-circle"
-                               href="{{route('vendor.order.list',['status'=>'pending'])}}">
+                        <div class="hs-unfold ">
+                            <a class="js-hs-unfold-invoker btn btn-icon navbar--cart btn-soft-secondary rounded-circle position-relative"
+                               href="{{ route('vendor.order_daily.list') }}">
                                 <i class="tio-shopping-basket-outlined"></i>
+                                <span class="position-absolute  right-0 badge rounded-circle bg-primary text-white"
+                                  style="top: 10%;transform: translate(25%, -25%); font-size: 0.6rem; width: 0.8rem; height: 0.8rem; padding: 0;">
+                                1
+                            </span>
                             </a>
+                            <!-- Perfectly aligned badge on the top-right corner -->
+
                         </div>
                         <!-- End Notification -->
                     </li>
